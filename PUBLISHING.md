@@ -2,7 +2,24 @@
 
 This guide explains how to publish `fastapi-lambda` to PyPI.
 
-## Prerequisites
+## 🚀 Automated Publishing (Recommended)
+
+The project uses GitHub Actions to automatically publish to PyPI when you push to the `release` branch.
+
+### Quick Start
+
+1. **Update version** in `pyproject.toml`
+2. **Update CHANGELOG.md**
+3. **Push to main**, then **merge to release**
+4. GitHub Actions automatically publishes to PyPI
+
+See [RELEASE.md](RELEASE.md) for detailed workflow.
+
+## 🔧 Manual Publishing (Alternative)
+
+If you need to publish manually:
+
+### Prerequisites
 
 1. **Create PyPI Account**: https://pypi.org/account/register/
 2. **Create API Token**: https://pypi.org/manage/account/token/
