@@ -2,11 +2,7 @@
 Tests for _compat module functions
 """
 
-from typing import Optional
-
-import pytest
 from pydantic import Field
-from pydantic.fields import FieldInfo
 from typing_extensions import Annotated
 
 from fastapifn._compat import copy_field_info, get_missing_field_error
@@ -33,7 +29,7 @@ class TestCopyFieldInfo:
         original_field = Field(default=42, description="Test field", le=100)
         new_annotation = str
 
-        copied_field = copy_field_info(field_info=original_field, annotation=new_annotation)
+        copied_field = copy_field_info(field_info=original_field, annotation=new_annotation)  # type: ignore
 
         assert copied_field is not original_field
         assert copied_field.description == "Test field"
@@ -45,7 +41,7 @@ class TestCopyFieldInfo:
         original_field = Field(default="original", title="Original Title")
         new_annotation = Annotated[str, Field(max_length=50)]
 
-        copied_field = copy_field_info(field_info=original_field, annotation=new_annotation)
+        copied_field = copy_field_info(field_info=original_field, annotation=new_annotation)  # type: ignore
 
         assert copied_field.title == "Original Title"
         assert copied_field.default == "original"

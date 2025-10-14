@@ -1,10 +1,12 @@
-"""Test dependency injection."""
-import pytest
+"""Test dependency injection functionality."""
 
-from tests.conftest import parse_response
+from typing import Annotated
+
+import pytest
 
 from fastapifn.app import FastAPI
 from fastapifn.params import Depends
+from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
@@ -16,7 +18,7 @@ async def test_simple_dependency(make_event, lambda_context):
         return 42
 
     @app.get("/")
-    async def root(value: int = Depends(get_value)):
+    async def root(value: Annotated[int, Depends(get_value)]):
         return {"value": value}
 
     event = make_event("GET", "/")
@@ -41,7 +43,7 @@ async def test_dependency_with_yield(make_event, lambda_context):
             cleanup_called.append(True)
 
     @app.get("/")
-    async def root(db: dict = Depends(get_db)):
+    async def root(db: Annotated[dict, Depends(get_db)]):
         return {"db_connected": db["connected"]}
 
     event = make_event("GET", "/")
@@ -62,11 +64,11 @@ async def test_nested_dependencies(make_event, lambda_context):
     async def get_a() -> int:
         return 10
 
-    async def get_b(a: int = Depends(get_a)) -> int:
+    async def get_b(a: Annotated[int, Depends(get_a)]) -> int:
         return a + 5
 
     @app.get("/")
-    async def root(b: int = Depends(get_b)):
+    async def root(b: Annotated[int, Depends(get_b)]):
         return {"result": b}
 
     event = make_event("GET", "/")
@@ -106,14 +108,14 @@ async def test_dependency_caching(make_event, lambda_context):
         call_count.append(1)
         return len(call_count)
 
-    async def dep1(value: int = Depends(get_value)) -> int:
+    async def dep1(value: Annotated[int, Depends(get_value)]) -> int:
         return value
 
-    async def dep2(value: int = Depends(get_value)) -> int:
+    async def dep2(value: Annotated[int, Depends(get_value)]) -> int:
         return value
 
     @app.get("/")
-    async def root(v1: int = Depends(dep1), v2: int = Depends(dep2)):
+    async def root(v1: Annotated[int, Depends(dep1)], v2: Annotated[int, Depends(dep2)]):
         return {"v1": v1, "v2": v2}
 
     event = make_event("GET", "/")

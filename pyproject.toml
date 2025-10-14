@@ -58,6 +58,8 @@ line-length = 120
 [tool.pyright]
 include = ["fastapifn", "tests"]
 typeCheckingMode = "basic"
+# Pytest is a dev dependency, not in runtime path
+reportMissingImports = "none"
 
 [tool.pytest.ini_options]
 norecursedirs = [".venv", ".serverless", "__pycache__"]
