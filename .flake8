@@ -1,0 +1,4 @@
+[flake8]
+exclude = .venv/,node_modules/
+ignore = E401, E711, E712, W503, E501, E203, E704
+per-file-ignores = */__init__.py: F401

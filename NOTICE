@@ -1,0 +1,56 @@
+# NOTICE
+
+This project contains code derived from FastAPI (https://github.com/fastapi/fastapi)
+Copyright (c) 2018 Sebastián Ramírez
+Licensed under the MIT License
+
+## Attribution
+
+FastAPI-Lambda is a fork of FastAPI optimized for AWS Lambda environments.
+The original FastAPI project was created by Sebastián Ramírez and is licensed
+under the MIT License.
+
+### Original FastAPI License
+
+MIT License
+
+Copyright (c) 2018 Sebastián Ramírez
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Changes from Original FastAPI
+
+This fork includes the following major modifications:
+
+1. **Removed ASGI Layer**: Direct Lambda event handling instead of ASGI
+2. **Removed Starlette Dependency**: Custom lightweight routing
+3. **Removed Features**: WebSockets, Background Tasks, File Uploads, Streaming
+4. **Optimized for Lambda**: <500ms cold starts, minimal package size
+5. **Added Sync Support**: Both `def` and `async def` endpoints supported
+6. **Simplified Dependencies**: Pydantic v2.7+ only
+
+For a complete list of changes, see the project documentation.
+
+## Acknowledgments
+
+Special thanks to:
+- Sebastián Ramírez (@tiangolo) - Creator of FastAPI
+- The FastAPI community
+- Pydantic developers
+- All contributors to the original FastAPI project

@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(python:*)",
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nPhase 5.6: Remove Lambda-incompatible response types (StreamingResponse, FileResponse)\n\nRemoved StreamingResponse and FileResponse from Starlette as they are\nincompatible with AWS Lambda constraints (6MB payload limit, no streaming).\n\nChanges:\n- Removed StreamingResponse class (~68 lines) from starlette/responses.py\n- Removed FileResponse class (~250 lines) with range request support\n- Removed helper exceptions and regex patterns for range handling\n- Cleaned up 18 unused imports\n- Updated fastapi/responses.py to remove exports\n\nResults:\n- Starlette: 4,048 → 3,695 lines (-353 lines, -8.7%)\n- Directory: 364KB → 336KB (-28KB, -7.7%)\n- responses.py: 479 → 197 lines (-282 lines, -58.9%)\n\nImpact:\n- Use S3 + CloudFront for static files instead of FileResponse\n- Lambda doesn''t support streaming, so StreamingResponse not needed\n- All core HTTP response types still work (JSON, HTML, Plain, Redirect)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git add:*)",
+      "Bash(python3:*)",
+      "Bash(git commit:*)",
+      "Read(//private/tmp/**)",
+      "Bash(awk:*)",
+      "Bash(poetry run pytest:*)",
+      "Bash(poetry add:*)",
+      "Bash(npm run vulture:*)",
+      "Bash(poetry run pyright:*)",
+      "Bash(docker run:*)",
+      "Bash(curl:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker logs:*)",
+      "Read(//tmp/**)",
+      "Bash(docker:*)",
+      "Bash(/dev/null)",
+      "Bash(poetry run sam:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,50 @@
+service: fastapifn-e2e-tests
+frameworkVersion: "3"
+configValidationMode: off # Workaround for runtime warnings
+
+provider:
+  name: aws
+  profile: tobias
+  region: "us-east-1"
+  stage: test
+  runtime: python3.12
+
+plugins:
+  - serverless-python-requirements
+  - serverless-stack-output
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    usePoetry: false
+  output:
+    file: ./stack-output.json
+
+package:
+  individually: true
+
+functions:
+  url:
+    module: sample_lambda
+    handler: handler.handler
+    url:
+      cors: true
+  v1:
+    module: sample_lambda
+    handler: handler.handler
+    events:
+      # API Gateway v1 requires explicit root path handling
+      # {proxy+} requires at least one character, so "/" must be defined separately
+      - http:
+          path: "/"
+          method: ANY
+      - http:
+          path: "{proxy+}"
+          method: ANY
+  v2:
+    module: sample_lambda
+    handler: handler.handler
+    events:
+      - httpApi:
+          path: "/{proxy+}"
+          method: "*"
