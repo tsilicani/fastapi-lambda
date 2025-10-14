@@ -2,10 +2,13 @@
 
 **Drop-in replacement for FastAPI** - Optimized for AWS Lambda with minimal cold start overhead and package size.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI version](https://badge.fury.io/py/fastapi-lambda.svg)](https://pypi.org/project/fastapi-lambda/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://static.pepy.tech/badge/fastapi-lambda)](https://pepy.tech/project/fastapi-lambda)
 [![Development Status](https://img.shields.io/badge/status-alpha-red.svg)](https://github.com/tsilicani/fastapi-lambda)
 [![Stability: Experimental](https://img.shields.io/badge/stability-experimental-orange.svg)](https://github.com/tsilicani/fastapi-lambda)
+[![CI](https://github.com/tsilicani/fastapi-lambda/actions/workflows/ci.yml/badge.svg)](https://github.com/tsilicani/fastapi-lambda/actions/workflows/ci.yml)
 
 ---
 

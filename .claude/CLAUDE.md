@@ -214,24 +214,47 @@ mypy fastapifn/
 ## Future implementations
 
 ### Testing & QA
-- [x] End-to-end tests with AWS SAM Local for Lambda testing
-  - ✅ Complete implementation with SAM template, pytest fixtures, and 8 tests
-  - ✅ Uses official AWS Lambda runtime (Docker) - zero compatibility issues
-  - ✅ Simple setup with `sam local start-api`
+- [x] End-to-end tests with Serverless Framework
+  - ✅ Complete implementation with serverless.yml, pytest fixtures, and 24 tests
+  - ✅ Tests all 3 deployment types: Lambda URL, API Gateway v1, API Gateway v2
+  - ✅ Parametrized fixtures for comprehensive coverage
   - 📝 See `tests/e2e/README.md` for detailed setup and usage
 - [ ] Integrate Bandit for security linting
 - [ ] Add code complexity analysis (radon or flake8-mccabe)
 
 ### Tooling & Formatting
 - [ ] Adopt isort (or confirm Black handles import ordering adequately)
-- [ ] Ensure consistent lint/format checks in CI
+- [x] Ensure consistent lint/format checks in CI
+  - ✅ GitHub Actions CI workflow with tests, linting, type-check
 
 ### CI/CD & Release
-- [ ] Set up GitHub Actions CI (tests, coverage, linting, type-check)
-- [ ] Publish to PyPI (versioning, changelog, metadata)
+- [x] Set up GitHub Actions CI (tests, coverage, linting, type-check)
+  - ✅ `.github/workflows/ci.yml` - Runs on main/PR
+  - ✅ Tests on Python 3.10, 3.11, 3.12
+- [x] Publish to PyPI (versioning, changelog, metadata)
+  - ✅ `.github/workflows/publish.yml` - Auto-publish on `release` branch
+  - ✅ Published: https://pypi.org/project/fastapi-lambda/
+  - ✅ MIT License with proper FastAPI attribution
+  - ✅ Complete package metadata
+
+### Community & Outreach
+- [ ] Share on Twitter/X with FastAPI community tag
+- [ ] Post on Reddit
+  - [ ] r/Python - Share as "Show & Tell"
+  - [ ] r/aws - AWS Lambda optimization angle
+  - [ ] r/FastAPI (if exists) or FastAPI Discord
+- [ ] Write blog post on Dev.to or Hashnode
+  - Topic: "FastAPI for Lambda: <500ms Cold Starts"
+  - Include performance benchmarks vs standard FastAPI
+- [ ] Create example projects showcasing different use cases
+- [ ] Contribute to awesome-fastapi list (if accepted)
 
 ### Documentation & Examples
 - [ ] Add an `examples/` folder with minimal sample projects
+  - [ ] Basic CRUD API
+  - [ ] JWT authentication example
+  - [ ] Multi-function Lambda deployment
 - [ ] Write a concise doc detailing unsupported FastAPI features and rationale (e.g., WebSockets, forms, background tasks)
-- [ ] Add coverage and McCabe complexity badges/summary to `README.md`
+- [x] Add PyPI and CI badges to `README.md`
+- [ ] Add coverage badge when Codecov is set up
 - [ ] Add an architecture diagram in this document (`CLAUDE.md`) showing class/function interactions
