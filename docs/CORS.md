@@ -5,8 +5,8 @@ FastAPI-Lambda includes a Lambda-native CORS (Cross-Origin Resource Sharing) mid
 ## Quick Start
 
 ```python
-from fastapifn import FastAPI
-from fastapifn.middleware.cors import CORSMiddleware
+from fastapi_lambda import FastAPI
+from fastapi_lambda.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 

@@ -83,7 +83,7 @@ twine upload dist/*
 The name `fastapi-lambda` was chosen because:
 - ✅ Clearly indicates it's for AWS Lambda
 - ✅ Shows relationship to FastAPI without claiming to be official
-- ✅ Reduces confusion vs `fastapifn` or similar
+- ✅ Package name matches project name
 - ✅ SEO-friendly for "fastapi lambda" searches
 
 ### Legal Safety

@@ -56,7 +56,7 @@ pip install fastapi-lambda
 ## 🎯 Quick Start
 
 ```python
-from fastapifn import FastAPI
+from fastapi_lambda import FastAPI
 
 app = FastAPI()
 
@@ -70,7 +70,7 @@ async def async_endpoint():
     return {"message": "Async works too!"}
 
 # Lambda handler
-from fastapifn import create_lambda_handler
+from fastapi_lambda import create_lambda_handler
 lambda_handler = create_lambda_handler(app)
 ```
 

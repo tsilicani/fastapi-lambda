@@ -8,10 +8,10 @@ import json
 import traceback
 from typing import Any, Callable, Dict, List, Optional, Type
 
-from fastapifn.openapi_schema import get_openapi_schema
-from fastapifn.request import LambdaRequest
-from fastapifn.router import LambdaRouter
-from fastapifn.types import LambdaEvent
+from fastapi_lambda.openapi_schema import get_openapi_schema
+from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.router import LambdaRouter
+from fastapi_lambda.types import LambdaEvent
 
 
 class FastAPI:
@@ -23,7 +23,7 @@ class FastAPI:
 
     def __init__(
         self,
-        title: str = "FastAPIFn",
+        title: str = "FastAPI-Lambda",
         version: str = "0.1.0",
         description: str = "",
         debug: bool = False,
@@ -53,7 +53,7 @@ class FastAPI:
         Add middleware to the application.
 
         Example:
-            from fastapifn.middleware.cors import CORSMiddleware
+            from fastapi_lambda.middleware.cors import CORSMiddleware
 
             app.add_middleware(
                 CORSMiddleware,
@@ -154,7 +154,7 @@ class FastAPI:
 
     def _error_response(self, exc: Exception) -> Dict[str, Any]:
         """Generate error response for Lambda."""
-        from fastapifn.exceptions import HTTPException, RequestValidationError
+        from fastapi_lambda.exceptions import HTTPException, RequestValidationError
 
         # Handle validation errors (422)
         if isinstance(exc, RequestValidationError):

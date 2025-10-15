@@ -30,8 +30,8 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from typing_extensions import Annotated, get_args, get_origin
 
-from fastapifn import params
-from fastapifn._compat import (
+from fastapi_lambda import params
+from fastapi_lambda._compat import (
     ErrorWrapper,
     ModelField,
     RequiredParam,
@@ -45,9 +45,9 @@ from fastapifn._compat import (
     is_scalar_field,
     lenient_issubclass,
 )
-from fastapifn.request import LambdaRequest
-from fastapifn.security import SecurityBase
-from fastapifn.utils import create_model_field
+from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.security import SecurityBase
+from fastapi_lambda.utils import create_model_field
 
 # Models for dependency injection
 
@@ -590,7 +590,7 @@ def extract_params_from_dict(
 
     # Single Pydantic model as param
     if len(fields) == 1 and lenient_issubclass(first_field.type_, BaseModel):
-        from fastapifn._compat import get_cached_model_fields
+        from fastapi_lambda._compat import get_cached_model_fields
 
         fields_to_extract = get_cached_model_fields(first_field.type_)
         single_not_embedded_field = True

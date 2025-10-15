@@ -77,7 +77,7 @@ Guide for publishing new versions to PyPI using the `release` branch.
    pip install --upgrade fastapi-lambda
    
    # Verify version
-   python -c "import fastapifn; print(fastapifn.__version__)"
+xe   python -c "import fastapi_lambda; print(fastapi_lambda.__version__)"
    ```
 
 8. **Merge back to main** (if needed):

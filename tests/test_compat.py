@@ -5,8 +5,8 @@ Tests for _compat module functions
 from pydantic import Field
 from typing_extensions import Annotated
 
-from fastapifn._compat import copy_field_info, get_missing_field_error
-from fastapifn.params import Query
+from fastapi_lambda._compat import copy_field_info, get_missing_field_error
+from fastapi_lambda.params import Query
 
 
 class TestCopyFieldInfo:

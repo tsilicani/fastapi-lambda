@@ -7,7 +7,7 @@ def test_root_endpoint(api_base_url: str) -> None:
     """Test root endpoint returns expected message."""
     response = requests.get(f"{api_base_url}/")
     assert response.status_code == 200
-    assert response.json() == {"message": "Hello from FastAPIFn"}
+    assert response.json() == {"message": "Hello from FastAPI-Lambda"}
 
 
 def test_health_endpoint(api_base_url: str) -> None:
@@ -35,13 +35,8 @@ def test_create_item(api_base_url: str) -> None:
         "price": 29.99,
         "description": "A test item",
     }
-
-    response = requests.post(
-        f"{api_base_url}/items",
-        json=payload,
-    )
-
-    # Note: FastAPIFn returns 200 by default, not 201
+    response = requests.post(f"{api_base_url}/items", json=payload)
+    # Note: FastAPI-Lambda returns 200 by default, not 201
     assert response.status_code == 200
 
     data = response.json()

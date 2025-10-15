@@ -2,6 +2,6 @@
 Lambda-native middleware.
 """
 
-from fastapifn.middleware.cors import CORSMiddleware
+from fastapi_lambda.middleware.cors import CORSMiddleware
 
 __all__ = ["CORSMiddleware"]

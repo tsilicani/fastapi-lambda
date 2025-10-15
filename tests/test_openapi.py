@@ -5,7 +5,7 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel
 
-from fastapifn.app import FastAPI
+from fastapi_lambda.app import FastAPI
 
 
 class Item(BaseModel):
@@ -178,7 +178,7 @@ def test_openapi_examples_with_complex_types():
     from enum import Enum
     from uuid import UUID
 
-    from fastapifn import Body, Query
+    from fastapi_lambda import Body, Query
 
     class Status(Enum):
         ACTIVE = "active"
@@ -225,7 +225,7 @@ def test_openapi_examples_all_types():
     from enum import Enum
     from pathlib import Path
 
-    from fastapifn import Body
+    from fastapi_lambda import Body
 
     class Priority(Enum):
         HIGH = "high"
@@ -275,7 +275,7 @@ def test_openapi_examples_edge_cases():
     from datetime import time
     from uuid import UUID
 
-    from fastapifn import Body
+    from fastapi_lambda import Body
 
     class TestProduct(BaseModel):
         id: UUID

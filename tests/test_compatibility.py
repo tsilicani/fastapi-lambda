@@ -1,13 +1,13 @@
 """
-Test compatibility with FastAPI original interfaces.
+Test compatibility with FastAPI API.
 
-This ensures that fastapifn can be used as a drop-in replacement for FastAPI.
+This ensures that fastapi_lambda can be used as a drop-in replacement for FastAPI.
 """
 
 
 def test_fastapi_class_import():
     """Test that FastAPI class can be imported."""
-    from fastapifn import FastAPI
+    from fastapi_lambda import FastAPI
 
     assert FastAPI is not None
     app = FastAPI()
@@ -16,15 +16,15 @@ def test_fastapi_class_import():
 
 def test_middleware_import():
     """Test that CORSMiddleware can be imported from fastapi.middleware.cors."""
-    from fastapifn.middleware.cors import CORSMiddleware
+    from fastapi_lambda.middleware.cors import CORSMiddleware
 
     assert CORSMiddleware is not None
 
 
 def test_add_middleware_interface():
     """Test that add_middleware has the same interface as FastAPI."""
-    from fastapifn import FastAPI
-    from fastapifn.middleware.cors import CORSMiddleware
+    from fastapi_lambda import FastAPI
+    from fastapi_lambda.middleware.cors import CORSMiddleware
 
     app = FastAPI()
 
@@ -44,7 +44,7 @@ def test_add_middleware_interface():
 
 def test_parameter_functions_import():
     """Test that parameter functions can be imported."""
-    from fastapifn import Body, Depends, Header, Path, Query
+    from fastapi_lambda import Body, Depends, Header, Path, Query
 
     assert Query is not None
     assert Path is not None
@@ -55,7 +55,7 @@ def test_parameter_functions_import():
 
 def test_response_classes_import():
     """Test that response classes can be imported."""
-    from fastapifn import (
+    from fastapi_lambda import (
         HTMLResponse,
         JSONResponse,
         PlainTextResponse,
@@ -70,7 +70,7 @@ def test_response_classes_import():
 
 def test_exception_import():
     """Test that HTTPException can be imported."""
-    from fastapifn import HTTPException
+    from fastapi_lambda import HTTPException
 
     assert HTTPException is not None
 
@@ -82,7 +82,7 @@ def test_exception_import():
 
 def test_decorator_methods():
     """Test that decorator methods exist and work."""
-    from fastapifn import FastAPI
+    from fastapi_lambda import FastAPI
 
     app = FastAPI()
 
@@ -103,7 +103,7 @@ def test_decorator_methods():
 
 def test_fastapi_init_parameters():
     """Test that FastAPI __init__ accepts common parameters."""
-    from fastapifn import FastAPI
+    from fastapi_lambda import FastAPI
 
     # This should work exactly like FastAPI
     app = FastAPI(
@@ -111,7 +111,7 @@ def test_fastapi_init_parameters():
         description="Test Description",
         version="1.0.0",
         openapi_url="/openapi.json",
-        docs_url=None,  # Disabled in fastapifn
+        docs_url=None,  # Disabled in fastapi_lambda
         debug=True,
     )
 
@@ -124,7 +124,7 @@ def test_fastapi_init_parameters():
 
 def test_cors_middleware_parameters():
     """Test that CORSMiddleware accepts all standard parameters."""
-    from fastapifn.middleware.cors import CORSMiddleware
+    from fastapi_lambda.middleware.cors import CORSMiddleware
 
     # All these parameters should work
     middleware = CORSMiddleware(
@@ -145,8 +145,8 @@ def test_cors_middleware_parameters():
 
 def test_drop_in_replacement_example():
     """Test a complete example that should work exactly like FastAPI."""
-    from fastapifn import Depends, FastAPI, HTTPException
-    from fastapifn.middleware.cors import CORSMiddleware
+    from fastapi_lambda import Depends, FastAPI, HTTPException
+    from fastapi_lambda.middleware.cors import CORSMiddleware
 
     app = FastAPI(title="Drop-in Test")
 
@@ -174,9 +174,9 @@ def test_drop_in_replacement_example():
 
 
 def test_import_compatibility():
-    """Test that imports work with 'from fastapifn import' syntax."""
+    """Test that imports work with 'from fastapi_lambda import' syntax."""
     # All these should work without errors
-    from fastapifn import (
+    from fastapi_lambda import (
         Body,
         Depends,
         FastAPI,
@@ -211,11 +211,11 @@ def test_import_compatibility():
 def test_middleware_import_path():
     """Test that middleware can be imported from standard path."""
     # This should work like: from fastapi.middleware.cors import CORSMiddleware
-    from fastapifn.middleware.cors import CORSMiddleware
+    from fastapi_lambda.middleware.cors import CORSMiddleware
 
     assert CORSMiddleware is not None
 
     # Can also import from middleware package
-    from fastapifn.middleware import CORSMiddleware as CORS
+    from fastapi_lambda.middleware import CORSMiddleware as CORS
 
     assert CORS is CORSMiddleware

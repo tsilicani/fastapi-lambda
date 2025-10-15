@@ -15,7 +15,7 @@ from uuid import UUID
 from pydantic import BaseModel
 from typing_extensions import Literal
 
-from fastapifn._compat import (
+from fastapi_lambda._compat import (
     GenerateJsonSchema,
     JsonSchemaValue,
     ModelField,
@@ -25,8 +25,8 @@ from fastapifn._compat import (
     get_schema_from_model_field,
     lenient_issubclass,
 )
-from fastapifn.dependencies import Dependant
-from fastapifn.params import Body, ParamTypes
+from fastapi_lambda.dependencies import Dependant
+from fastapi_lambda.params import Body, ParamTypes
 
 # OpenAPI constants
 REF_PREFIX = "#/components/schemas/"
@@ -200,7 +200,7 @@ def _get_flat_fields_from_params(params: List[ModelField]) -> List[ModelField]:
     for param in params:
         if lenient_issubclass(param.type_, BaseModel):
             # Pydantic model as parameter - extract fields
-            from fastapifn._compat import get_cached_model_fields
+            from fastapi_lambda._compat import get_cached_model_fields
 
             model_fields = get_cached_model_fields(param.type_)
             flat_fields.extend(model_fields)

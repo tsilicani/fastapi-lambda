@@ -1,11 +1,11 @@
-"""Minimal FastAPIFn application for end-to-end testing."""
+"""Minimal FastAPI-Lambda application for end-to-end testing."""
 
 from typing import Optional
 
 from pydantic import BaseModel
 
-from fastapifn import FastAPI, LambdaEvent
-from fastapifn.middleware.cors import CORSMiddleware
+from fastapi_lambda import FastAPI, LambdaEvent
+from fastapi_lambda.middleware.cors import CORSMiddleware
 
 
 class Item(BaseModel):
@@ -41,7 +41,7 @@ app.add_middleware(
 @app.get("/")
 def root() -> dict[str, str]:
     """Root endpoint."""
-    return {"message": "Hello from FastAPIFn"}
+    return {"message": "Hello from FastAPI-Lambda"}
 
 
 @app.get("/health")
@@ -59,7 +59,7 @@ async def get_item(item_id: int) -> ItemResponse:
 @app.post("/items", response_model=ItemResponse)
 async def create_item(item: Item) -> ItemResponse:
     """Create new item."""
-    # Note: status_code parameter not supported in FastAPIFn router
+    # Note: status_code parameter not supported in FastAPI-Lambda router
     # Return 200 by default, or use Response object to set status
     return ItemResponse(id=42, name=item.name, price=item.price)
 

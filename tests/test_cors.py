@@ -4,9 +4,9 @@ Tests for CORS middleware.
 
 import pytest
 
-from fastapifn import FastAPI
-from fastapifn.middleware.cors import CORSMiddleware
-from fastapifn.types import LambdaEvent
+from fastapi_lambda import FastAPI
+from fastapi_lambda.middleware.cors import CORSMiddleware
+from fastapi_lambda.types import LambdaEvent
 
 
 @pytest.fixture

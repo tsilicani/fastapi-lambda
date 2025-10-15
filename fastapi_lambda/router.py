@@ -11,9 +11,9 @@ from contextlib import AsyncExitStack
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 
 # Import from lambda_dependencies (not from old ASGI code)
-from fastapifn.dependencies import get_dependant, solve_dependencies
-from fastapifn.request import LambdaRequest
-from fastapifn.response import JSONResponse, LambdaResponse
+from fastapi_lambda.dependencies import get_dependant, solve_dependencies
+from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.response import JSONResponse, LambdaResponse
 
 
 # Path parameter converters (simplified from Starlette)
@@ -139,7 +139,7 @@ class Route:
         # Create response field if response_model is provided
         self.response_field: Optional[Any] = None
         if response_model:
-            from fastapifn.utils import create_model_field
+            from fastapi_lambda.utils import create_model_field
 
             self.response_field = create_model_field(
                 name=f"Response_{self.name}",
@@ -199,7 +199,7 @@ class Route:
             # Check for validation errors
             if solved.errors:
                 # Return validation error response
-                from fastapifn.exceptions import RequestValidationError
+                from fastapi_lambda.exceptions import RequestValidationError
 
                 raise RequestValidationError(errors=solved.errors)
 

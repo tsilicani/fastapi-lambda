@@ -28,7 +28,7 @@ license = {text = "MIT"}
 name = "fastapi-lambda"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "0.1.0"
+version = "0.2.0"
 
 [project.urls]
 Documentation = "https://github.com/tsilicani/fastapi-lambda#readme"
@@ -37,8 +37,8 @@ Issues = "https://github.com/tsilicani/fastapi-lambda/issues"
 Repository = "https://github.com/tsilicani/fastapi-lambda"
 
 [tool.poetry]
-include = ["fastapifn/py.typed"]
-packages = [{include = "fastapifn"}]
+include = ["fastapi_lambda/py.typed"]
+packages = [{include = "fastapi_lambda"}]
 
 [tool.poetry.group.dev.dependencies]
 aws-sam-cli = {version = ">=1.100.0", markers = "python_version >= \"3.9\" and python_version < \"4.0\""}
@@ -56,7 +56,7 @@ vulture = "^2.14"
 line-length = 120
 
 [tool.pyright]
-include = ["fastapifn", "tests"]
+include = ["fastapi_lambda", "tests"]
 typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]

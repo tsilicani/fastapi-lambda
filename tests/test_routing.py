@@ -2,7 +2,7 @@
 
 import pytest
 
-from fastapifn.app import FastAPI
+from fastapi_lambda.app import FastAPI
 from tests.conftest import parse_response
 
 

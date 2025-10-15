@@ -1,1 +1,1 @@
-"""Test suite for fastapifn framework."""
+"""Test suite for fastapi_lambda framework."""

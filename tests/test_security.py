@@ -4,9 +4,9 @@ from typing import Annotated, Optional
 
 import pytest
 
-from fastapifn.app import FastAPI
-from fastapifn.params import Depends
-from fastapifn.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi_lambda.app import FastAPI
+from fastapi_lambda.params import Depends
+from fastapi_lambda.security import HTTPAuthorizationCredentials, HTTPBearer
 from tests.conftest import parse_response
 
 

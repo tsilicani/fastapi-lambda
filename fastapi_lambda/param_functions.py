@@ -2,8 +2,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 from typing_extensions import Annotated, Doc, deprecated
 
-from fastapifn import params
-from fastapifn._compat import Undefined
+from fastapi_lambda import params
+from fastapi_lambda._compat import Undefined
 
 # Example stub - only for type hints, not used at runtime
 Example = Dict[str, Any]
