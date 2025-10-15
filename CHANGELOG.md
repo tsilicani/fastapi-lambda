@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-15
+
+### Changed
+- **BREAKING**: Renamed package from `fastapifn` to `fastapi_lambda` for consistency with project name
+- Updated all imports: `from fastapifn` → `from fastapi_lambda`
+- Updated default app title from "FastAPIFn" to "FastAPI-Lambda"
+- Updated all documentation and examples to use new package name
+
+### Fixed
+- Corrected package structure to match PyPI project name `fastapi-lambda`
+- Fixed import paths in all test files and examples
+
 ## [0.1.0] - 2025-10-14
 
 ### Added
@@ -43,5 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Architecture documentation
 - Publishing guide for PyPI
 
-[Unreleased]: https://github.com/tsilicani/fastapi-lambda/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tsilicani/fastapi-lambda/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tsilicani/fastapi-lambda/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/tsilicani/fastapi-lambda/releases/tag/v0.1.0
