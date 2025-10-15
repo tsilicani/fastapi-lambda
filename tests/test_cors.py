@@ -388,3 +388,100 @@ async def test_cors_regex_origin():
 
     assert response["statusCode"] == 200
     assert response["headers"]["Access-Control-Allow-Origin"] == "https://subdomain.example.com"
+
+
+@pytest.mark.asyncio
+async def test_cors_on_unhandled_exception():
+    """Test that CORS headers are present even on unhandled exceptions (500)."""
+    app = FastAPI(debug=True)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    @app.get("/crash")
+    def crash_endpoint():
+        raise Exception("Unhandled exception!")
+
+    event: LambdaEvent = {
+        "httpMethod": "GET",
+        "path": "/crash",
+        "headers": {
+            "origin": "https://example.com",
+        },
+        "queryStringParameters": None,
+        "pathParameters": None,
+        "body": None,
+        "isBase64Encoded": False,
+        "requestContext": {
+            "requestId": "test-123",
+            "accountId": "123456789012",
+            "stage": "prod",
+            "requestTime": "09/Apr/2015:12:34:56 +0000",
+            "requestTimeEpoch": 1428582896000,
+            "identity": {},
+            "domainName": "example.execute-api.us-east-1.amazonaws.com",
+            "apiId": "abc123",
+        },
+    }
+
+    response = await app(event, {})
+
+    # Should return 500
+    assert response["statusCode"] == 500
+
+    # CRITICAL: CORS headers must be present even on unhandled exceptions
+    assert "Access-Control-Allow-Origin" in response["headers"]
+    assert response["headers"]["Access-Control-Allow-Origin"] == "*"
+    # Note: Allow-Methods and Allow-Headers are only added on preflight (OPTIONS) requests
+
+
+@pytest.mark.asyncio
+async def test_cors_on_http_exception():
+    """Test that CORS headers are present on HTTPException (404)."""
+    from fastapi_lambda import HTTPException
+
+    app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    @app.get("/not-found")
+    def not_found_endpoint():
+        raise HTTPException(status_code=404, detail="Not found")
+
+    event: LambdaEvent = {
+        "httpMethod": "GET",
+        "path": "/not-found",
+        "headers": {
+            "origin": "https://example.com",
+        },
+        "queryStringParameters": None,
+        "pathParameters": None,
+        "body": None,
+        "isBase64Encoded": False,
+        "requestContext": {
+            "requestId": "test-123",
+            "accountId": "123456789012",
+            "stage": "prod",
+            "requestTime": "09/Apr/2015:12:34:56 +0000",
+            "requestTimeEpoch": 1428582896000,
+            "identity": {},
+            "domainName": "example.execute-api.us-east-1.amazonaws.com",
+            "apiId": "abc123",
+        },
+    }
+
+    response = await app(event, {})
+
+    # Should return 404
+    assert response["statusCode"] == 404
+
+    # CORS headers must be present
+    assert "Access-Control-Allow-Origin" in response["headers"]
+    assert response["headers"]["Access-Control-Allow-Origin"] == "*"

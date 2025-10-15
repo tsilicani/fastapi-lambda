@@ -202,6 +202,7 @@ mypy fastapi_lambda/
 - **Pydantic v1 compatibility** - v2.7+ only for performance
 - **jsonable_encoder legacy code** - Simplified 48-line implementation
 - **Unused FastAPI modules** - Cookie params, WebSocket params, etc.
+- **Automatic sync/async mixing** - No threadpool for sync deps in async context (FastAPI has this via Starlette)
 
 ## References
 
@@ -235,6 +236,11 @@ mypy fastapi_lambda/
   - [ ] Environment variable management
   - [ ] Consider using `uvicorn` or custom solution
   - Goal: `fastapi-lambda dev handler.py` for instant local testing
+- [ ] Auto-threadpool for sync dependencies in async context
+  - Currently: sync deps in async endpoints/deps raise `RuntimeError`
+  - FastAPI behavior: auto-runs sync deps in threadpool via Starlette
+  - Trade-off: adds complexity and minimal overhead vs explicit async/sync separation
+  - Consider: optional flag `auto_threadpool=True` for FastAPI compatibility
 
 ### CI/CD & Release
 - [x] Set up GitHub Actions CI (tests, coverage, linting, type-check)

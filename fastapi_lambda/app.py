@@ -4,7 +4,6 @@ Lambda-native FastAPI application.
 Replaces fastapi.applications.FastAPI which is ASGI-based.
 """
 
-import json
 import traceback
 from typing import Any, Callable, Dict, List, Optional, Type
 
@@ -149,55 +148,54 @@ class FastAPI:
             return response.to_lambda_response()  # type: ignore[return-value]
 
         except Exception as exc:
-            # Handle errors
-            return self._error_response(exc)
+            # Handle errors (with middleware support)
+            request = LambdaRequest(event)
+            return self._error_response(exc, request)
 
-    def _error_response(self, exc: Exception) -> Dict[str, Any]:
+    def _error_response(self, exc: Exception, request: LambdaRequest) -> Dict[str, Any]:
         """Generate error response for Lambda."""
         from fastapi_lambda.exceptions import HTTPException, RequestValidationError
+        from fastapi_lambda.response import JSONResponse
 
         # Handle validation errors (422)
         if isinstance(exc, RequestValidationError):
-            return {
-                "statusCode": 422,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({"detail": exc.errors()}),
-                "isBase64Encoded": False,
-            }
+            response = JSONResponse(
+                content={"detail": exc.errors()},
+                status_code=422,
+            )
 
         # Handle HTTP exceptions (custom status codes)
-        if isinstance(exc, HTTPException):
-            return {
-                "statusCode": exc.status_code,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({"detail": exc.detail}),
-                "isBase64Encoded": False,
-            }
+        elif isinstance(exc, HTTPException):
+            response = JSONResponse(
+                content={"detail": exc.detail},
+                status_code=exc.status_code,
+            )
 
         # Handle generic exceptions (500)
-        if self.debug:
+        elif self.debug:
             # Debug mode: return detailed error with traceback
-            return {
-                "statusCode": 500,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps(
-                    {
-                        "detail": str(exc),
-                        "type": type(exc).__name__,
-                        "traceback": traceback.format_exc().split("\n"),
-                    },
-                    indent=2,
-                ),
-                "isBase64Encoded": False,
-            }
+            response = JSONResponse(
+                content={
+                    "detail": str(exc),
+                    "type": type(exc).__name__,
+                    "traceback": traceback.format_exc().split("\n"),
+                },
+                status_code=500,
+            )
         else:
             # Production: return generic error
-            return {
-                "statusCode": 500,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({"detail": "Internal Server Error"}),
-                "isBase64Encoded": False,
-            }
+            response = JSONResponse(
+                content={"detail": "Internal Server Error"},
+                status_code=500,
+            )
+
+        # Apply middleware (in reverse order, last added first)
+        for middleware in reversed(self._middleware):
+            if hasattr(middleware, "process_request"):
+                response = middleware.process_request(request, response)
+
+        # Convert to Lambda response format
+        return response.to_lambda_response()  # type: ignore[return-value]
 
 
 # Convenience function for Lambda handler
