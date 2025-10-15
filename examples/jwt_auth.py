@@ -370,10 +370,10 @@ lambda_handler = create_lambda_handler(app)
 
 """
 1. Login to get token:
-   
+
    POST /login
    Body: {"username": "alice", "password": "password123"}
-   
+
    Response:
    {
      "access_token": "eyJ0eXAi...",
@@ -383,10 +383,10 @@ lambda_handler = create_lambda_handler(app)
 
 
 2. Use token to access protected endpoint:
-   
+
    GET /me
    Headers: {"Authorization": "Bearer eyJ0eXAi..."}
-   
+
    Response:
    {
      "message": "This is your profile",
@@ -395,9 +395,9 @@ lambda_handler = create_lambda_handler(app)
 
 
 3. Try to access without token:
-   
+
    GET /me
-   
+
    Response: 403 Forbidden
    {
      "detail": "Not authenticated"
@@ -405,10 +405,10 @@ lambda_handler = create_lambda_handler(app)
 
 
 4. Access admin endpoint as non-admin:
-   
+
    GET /admin
    Headers: {"Authorization": "Bearer <bob's token>"}
-   
+
    Response: 403 Forbidden
    {
      "detail": "Not enough permissions"
@@ -416,10 +416,10 @@ lambda_handler = create_lambda_handler(app)
 
 
 5. Optional authentication:
-   
+
    GET /public-or-protected
    # No header -> guest message
-   
+
    GET /public-or-protected
    Headers: {"Authorization": "Bearer <alice's token>"}
    # Authenticated -> personalized message
