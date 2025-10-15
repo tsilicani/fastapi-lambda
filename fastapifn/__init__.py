@@ -12,6 +12,7 @@ from fastapifn.response import RedirectResponse as RedirectResponse
 # Lambda-native core
 from .app import FastAPI as FastAPI
 from .app import LambdaEvent as LambdaEvent
+from .app import create_lambda_handler as create_lambda_handler
 
 # Exceptions
 from .exceptions import HTTPException as HTTPException

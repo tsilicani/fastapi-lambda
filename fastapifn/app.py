@@ -6,7 +6,7 @@ Replaces fastapi.applications.FastAPI which is ASGI-based.
 
 import json
 import traceback
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from fastapifn.openapi_schema import get_openapi_schema
 from fastapifn.request import LambdaRequest
@@ -42,10 +42,27 @@ class FastAPI:
         self.servers = servers
         self.router = LambdaRouter()
         self._openapi_schema: Optional[Dict[str, Any]] = None
+        self._middleware: List[Any] = []
 
         # Register OpenAPI endpoint if enabled
         if self.openapi_url:
             self._register_openapi_route()
+
+    def add_middleware(self, middleware_class: Type, **options: Any) -> None:
+        """
+        Add middleware to the application.
+
+        Example:
+            from fastapifn.middleware.cors import CORSMiddleware
+
+            app.add_middleware(
+                CORSMiddleware,
+                allow_origins=["https://example.com"],
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+        """
+        self._middleware.append(middleware_class(**options))
 
     def get(self, path: str, **kwargs: Any) -> Callable:
         """Register GET endpoint."""
@@ -122,6 +139,11 @@ class FastAPI:
 
             # Route and execute
             response = await self.router.route(request)
+
+            # Apply middleware (in reverse order, last added first)
+            for middleware in reversed(self._middleware):
+                if hasattr(middleware, "process_request"):
+                    response = middleware.process_request(request, response)
 
             # Convert to Lambda response format
             return response.to_lambda_response()  # type: ignore[return-value]

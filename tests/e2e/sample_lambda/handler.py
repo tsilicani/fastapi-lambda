@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from fastapifn import FastAPI, LambdaEvent
+from fastapifn.middleware.cors import CORSMiddleware
 
 
 class Item(BaseModel):
@@ -24,6 +25,17 @@ class ItemResponse(BaseModel):
 
 
 app = FastAPI(title="E2E Test API", version="1.0.0", debug=True)
+
+# Add CORS middleware for E2E testing
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://example.com", "https://test.example.com"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Custom-Header"],
+    allow_credentials=True,
+    expose_headers=["X-Request-ID"],
+    max_age=3600,
+)
 
 
 @app.get("/")
