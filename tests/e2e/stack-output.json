@@ -1,8 +1,8 @@
 {
   "UrlLambdaFunctionUrl": "https://xthqb7ff75cin53kbiu5uthoom0nedyi.lambda-url.us-east-1.on.aws/",
-  "V2LambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:778425763547:function:fastapifn-e2e-tests-test-v2:6",
-  "V1LambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:778425763547:function:fastapifn-e2e-tests-test-v1:6",
-  "UrlLambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:778425763547:function:fastapifn-e2e-tests-test-url:9",
+  "V1LambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:778425763547:function:fastapifn-e2e-tests-test-v1:11",
+  "V2LambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:778425763547:function:fastapifn-e2e-tests-test-v2:11",
+  "UrlLambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:778425763547:function:fastapifn-e2e-tests-test-url:14",
   "HttpApiId": "q4ylnzk73i",
   "ServiceEndpoint": "https://r7l8t0flqi.execute-api.us-east-1.amazonaws.com/test",
   "ServerlessDeploymentBucketName": "fastapifn-e2e-tests-test-serverlessdeploymentbucke-xarcxevvr9ox",

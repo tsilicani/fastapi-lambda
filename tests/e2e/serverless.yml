@@ -27,8 +27,7 @@ functions:
   url:
     module: sample_lambda
     handler: handler.handler
-    url:
-      cors: true
+    url: true
   v1:
     module: sample_lambda
     handler: handler.handler

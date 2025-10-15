@@ -227,6 +227,15 @@ mypy fastapifn/
 - [x] Ensure consistent lint/format checks in CI
   - ✅ GitHub Actions CI workflow with tests, linting, type-check
 
+### Development Experience
+- [ ] Add live development server
+  - [ ] Hot reload on code changes
+  - [ ] Simulate Lambda execution locally
+  - [ ] Mock API Gateway/Lambda context
+  - [ ] Environment variable management
+  - [ ] Consider using `uvicorn` or custom solution
+  - Goal: `fastapi-lambda dev handler.py` for instant local testing
+
 ### CI/CD & Release
 - [x] Set up GitHub Actions CI (tests, coverage, linting, type-check)
   - ✅ `.github/workflows/ci.yml` - Runs on main/PR

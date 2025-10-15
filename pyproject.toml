@@ -60,6 +60,9 @@ include = ["fastapifn", "tests"]
 typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::DeprecationWarning",
+]
 norecursedirs = [".venv", ".serverless", "__pycache__"]
 python_files = ["test_*.py"]
 testpaths = [
