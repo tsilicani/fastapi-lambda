@@ -49,7 +49,7 @@ htmlcov/
 Pipfile
 node_modules/
 .serverless/
-tests/e2e/sample_lambda/fastapifn/
+tests/e2e/sample_lambda/fastapi_lambda/
 tests/e2e/stack-output.json
 
 # Documentation (if using docs folder for something else)

@@ -4,8 +4,8 @@ from typing import Annotated
 
 import pytest
 
-from fastapifn.app import FastAPI
-from fastapifn.params import Depends
+from fastapi_lambda.app import FastAPI
+from fastapi_lambda.params import Depends
 from tests.conftest import parse_response
 
 
@@ -83,7 +83,7 @@ async def test_nested_dependencies(make_event, lambda_context):
 async def test_request_dependency(make_event, lambda_context):
     """Test injecting Request object."""
     app = FastAPI()
-    from fastapifn.request import LambdaRequest
+    from fastapi_lambda.request import LambdaRequest
 
     @app.get("/info", response_model=None)  # Disable response_model validation for Request
     async def info(request: LambdaRequest):

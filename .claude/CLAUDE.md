@@ -19,7 +19,7 @@ See `LICENSE` and `NOTICE` files for full details.
 
 ## Overview
 
-FastAPIFn is a lightweight, Lambda-optimized framework that maintains FastAPI's intuitive API while removing unnecessary dependencies and features incompatible with serverless environments. Write standard FastAPI code, deploy to Lambda with improved performance.
+FastAPI-Lambda is a lightweight, Lambda-optimized framework that maintains FastAPI's intuitive API while removing unnecessary dependencies and features incompatible with serverless environments. Write standard FastAPI code, deploy to Lambda with improved performance.
 
 **Key Benefits:**
 - 🚀 **<500ms cold starts** (no ASGI layer overhead)
@@ -129,7 +129,7 @@ def send_email(background_tasks: BackgroundTasks):
 - Package size: ~5.8MB
 - Memory overhead: ASGI + middleware stack
 
-**fastapifn Target:**
+**fastapi_lambda Target:**
 - Cold start: <500ms (no ASGI, pre-compiled routes)
 - Package size: ~3MB (50% reduction)
 - Memory: Minimal overhead, direct event handling
@@ -178,13 +178,13 @@ def send_email(background_tasks: BackgroundTasks):
 
 ```bash
 # Run tests with coverage
-poetry run pytest --cov=fastapifn --cov-report=term-missing
+poetry run pytest --cov=fastapi_lambda --cov-report=term-missing
 
 # Find dead code
-poetry run vulture fastapifn/
+poetry run vulture fastapi_lambda/
 
 # Type checking
-mypy fastapifn/
+mypy fastapi_lambda/
 ```
 
 ## Removed Features (Lambda Incompatible)

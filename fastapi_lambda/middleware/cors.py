@@ -10,8 +10,8 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
-from fastapifn.request import LambdaRequest
-from fastapifn.response import LambdaResponse, PlainTextResponse
+from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.response import LambdaResponse, PlainTextResponse
 
 ALL_METHODS = ("DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT")
 SAFELISTED_HEADERS = {"Accept", "Accept-Language", "Content-Language", "Content-Type"}

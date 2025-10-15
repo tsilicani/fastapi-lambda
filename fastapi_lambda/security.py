@@ -10,8 +10,8 @@ from typing import Any, Optional, Tuple
 from pydantic import BaseModel
 from typing_extensions import Annotated, Doc
 
-from fastapifn.exceptions import HTTPException
-from fastapifn.request import LambdaRequest
+from fastapi_lambda.exceptions import HTTPException
+from fastapi_lambda.request import LambdaRequest
 
 
 def get_authorization_scheme_param(

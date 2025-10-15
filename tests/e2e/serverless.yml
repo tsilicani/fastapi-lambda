@@ -1,4 +1,4 @@
-service: fastapifn-e2e-tests
+service: fastapi-lambda-e2e-tests
 frameworkVersion: "3"
 configValidationMode: off # Workaround for runtime warnings
 

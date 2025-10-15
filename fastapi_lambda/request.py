@@ -8,7 +8,7 @@ import json
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qs
 
-from fastapifn.types import LambdaEvent
+from fastapi_lambda.types import LambdaEvent
 
 
 class LambdaRequest:

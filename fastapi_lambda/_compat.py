@@ -28,7 +28,7 @@ from pydantic.json_schema import JsonSchemaValue as JsonSchemaValue
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
 from typing_extensions import Annotated, Literal, get_args, get_origin
 
-from fastapifn.types import ModelNameMap, UnionType
+from fastapi_lambda.types import ModelNameMap, UnionType
 
 sequence_annotation_to_type = {
     Sequence: list,
@@ -187,7 +187,7 @@ def get_definitions(
 
 
 def is_scalar_field(field: ModelField) -> bool:
-    from fastapifn import params
+    from fastapi_lambda import params
 
     return field_annotation_is_scalar(field.field_info.annotation) and not isinstance(field.field_info, params.Body)
 

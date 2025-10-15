@@ -1,12 +1,12 @@
 """Test Pydantic validation."""
+
 from typing import Optional
 
 import pytest
 from pydantic import BaseModel
 
+from fastapi_lambda.app import FastAPI
 from tests.conftest import parse_response
-
-from fastapifn.app import FastAPI
 
 
 class Item(BaseModel):

@@ -30,7 +30,7 @@ jobs:
 
       - name: Check coverage
         run: |
-          poetry run pytest tests/ --cov=fastapifn --cov-report=term-missing -k 'not e2e'
+          poetry run pytest tests/ --cov=fastapi_lambda --cov-report=term-missing -k 'not e2e'
 
   publish:
     name: Build and Publish to PyPI

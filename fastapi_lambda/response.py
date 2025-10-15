@@ -7,7 +7,7 @@ Replaces starlette.responses.Response which uses ASGI __call__(scope, receive, s
 import json
 from typing import Any, Dict, Optional
 
-from fastapifn.types import LambdaResponse as LambdaResponseDict
+from fastapi_lambda.types import LambdaResponse as LambdaResponseDict
 
 
 class LambdaResponse:

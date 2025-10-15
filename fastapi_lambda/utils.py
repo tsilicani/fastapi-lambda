@@ -5,8 +5,8 @@ from pydantic import PydanticSchemaGenerationError
 from pydantic.fields import FieldInfo
 from typing_extensions import Literal
 
-import fastapifn
-from fastapifn._compat import ModelField, Undefined, Validator
+import fastapi_lambda
+from fastapi_lambda._compat import ModelField, Undefined, Validator
 
 
 def get_path_param_names(path: str) -> Set[str]:
@@ -29,7 +29,7 @@ def create_model_field(
     try:
         return ModelField(**kwargs)  # type: ignore[arg-type]
     except (RuntimeError, PydanticSchemaGenerationError):
-        raise fastapifn.exceptions.FastAPIError(
+        raise fastapi_lambda.exceptions.FastAPIError(
             "Invalid args for response field! Hint: "
             f"check that {type_} is a valid Pydantic field type. "
             "If you are using a return type annotation that is not a valid Pydantic "

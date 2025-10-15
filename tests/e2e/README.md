@@ -1,6 +1,6 @@
 # E2E Tests
 
-End-to-end tests for FastAPIFn deployed on AWS Lambda with different integration methods.
+End-to-end tests for FastAPI-Lambda deployed on AWS Lambda with different integration methods.
 
 ## Deployment Types
 
@@ -18,7 +18,7 @@ npm run test:e2e:setup
 ```
 
 This will:
-- Copy the `fastapifn` package to `sample_lambda/`
+- Copy the `fastapi_lambda` package to `sample_lambda/`
 - Deploy using Serverless Framework
 - Save deployment URLs to `stack-output.json`
 
