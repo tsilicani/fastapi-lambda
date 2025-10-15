@@ -46,6 +46,7 @@
         "submodel",
         "Subschemas",
         "testpaths",
+        "threadpool",
         "tiangolo",
         "userpass",
         "uvicorn",

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-10-15
+
+### Fixed
+- **CRITICAL**: CORS headers now correctly applied to error responses (500, 422, HTTPException)
+- Previously, unhandled exceptions would return responses without CORS headers, causing browser errors
+- All error responses now pass through middleware chain before returning to Lambda
+
 ## [0.2.0] - 2025-10-15
 
 ### Changed

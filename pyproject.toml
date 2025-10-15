@@ -28,7 +28,7 @@ license = {text = "MIT"}
 name = "fastapi-lambda"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "0.2.0"
+version = "0.2.1"
 
 [project.urls]
 Documentation = "https://github.com/tsilicani/fastapi-lambda#readme"
