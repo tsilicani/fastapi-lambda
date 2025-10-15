@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from fastapi_lambda import FastAPI, LambdaEvent
+from fastapi_lambda import FastAPI, JSONResponse, LambdaEvent
 from fastapi_lambda.middleware.cors import CORSMiddleware
 
 
@@ -48,6 +48,18 @@ def root() -> dict[str, str]:
 def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+@app.get("/cached")
+def cached_endpoint():
+    """Endpoint with custom cache headers."""
+    return JSONResponse(
+        content={"data": "cached-content", "timestamp": 1234567890},
+        headers={
+            "Cache-Control": "max-age=3600, public",
+            "X-Custom-Header": "test-value",
+        },
+    )
 
 
 @app.get("/items/{item_id}", response_model=ItemResponse)

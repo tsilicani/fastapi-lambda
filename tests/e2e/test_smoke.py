@@ -17,6 +17,21 @@ def test_health_endpoint(api_base_url: str) -> None:
     assert response.json() == {"status": "healthy"}
 
 
+def test_custom_headers(api_base_url: str) -> None:
+    """Test endpoint with custom response headers."""
+    response = requests.get(f"{api_base_url}/cached")
+    assert response.status_code == 200
+
+    # Verify custom headers
+    assert response.headers.get("Cache-Control") == "max-age=3600, public"
+    assert response.headers.get("X-Custom-Header") == "test-value"
+
+    # Verify response body
+    data = response.json()
+    assert data["data"] == "cached-content"
+    assert data["timestamp"] == 1234567890
+
+
 def test_get_item(api_base_url: str) -> None:
     """Test GET /items/{item_id}."""
     response = requests.get(f"{api_base_url}/items/5")

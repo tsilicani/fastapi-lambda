@@ -72,3 +72,4 @@ build/
 .env.local
 .env.*.local
 secrets.json
+tests/e2e/stack-output.json
