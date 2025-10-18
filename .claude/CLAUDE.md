@@ -241,6 +241,16 @@ mypy fastapi_lambda/
   - FastAPI behavior: auto-runs sync deps in threadpool via Starlette
   - Trade-off: adds complexity and minimal overhead vs explicit async/sync separation
   - Consider: optional flag `auto_threadpool=True` for FastAPI compatibility
+- [ ] Add `APIRouter` support for better route organization
+  - Currently: Only single `FastAPI` app with direct route registration
+  - FastAPI standard: `APIRouter` allows grouping routes with shared prefix/dependencies/tags
+  - Benefits:
+    - Organize routes by domain (public, authenticated, admin)
+    - Apply dependencies at router level (auto-apply auth to all routes)
+    - Better code organization for large APIs (multi-file structure)
+    - `app.include_router(router, prefix="/api", dependencies=[Depends(...)])`
+  - Implementation: Create `APIRouter` class similar to `LambdaRouter` but composable
+  - Reference: `examples/jwt_auth.py` shows need for route organization patterns
 
 ### CI/CD & Release
 - [x] Set up GitHub Actions CI (tests, coverage, linting, type-check)
