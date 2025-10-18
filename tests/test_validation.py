@@ -141,7 +141,7 @@ async def test_query_with_examples(make_event, lambda_context):
     app = FastAPI()
 
     @app.get("/search")
-    async def search(q: str = Query(examples={"example1": "test"})):
+    async def search(q: str = Query(examples=[{"example1": "test"}])):
         return {"query": q}
 
     event = make_event("GET", "/search", None, {"q": "hello"})
