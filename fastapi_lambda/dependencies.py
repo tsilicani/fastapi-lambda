@@ -83,7 +83,7 @@ class Dependant:
 if sys.version_info >= (3, 13):
     from inspect import iscoroutinefunction
 else:
-    from asyncio import iscoroutinefunction
+    from asyncio import iscoroutinefunction  # pragma: no cover
 
 
 def is_coroutine_callable(call: Callable[..., Any]) -> bool:

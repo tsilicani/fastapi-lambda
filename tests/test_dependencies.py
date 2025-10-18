@@ -128,3 +128,67 @@ async def test_dependency_caching(make_event, lambda_context):
     assert body["v2"] == 1
     # Dependency should have been called only once
     assert len(call_count) == 1
+
+
+@pytest.mark.asyncio
+async def test_class_dependency_raises_error(make_event, lambda_context):
+    """Test that using a class as dependency raises RuntimeError."""
+    app = FastAPI()
+
+    class MyClass:
+        """A class that is not async callable."""
+
+        def __init__(self):
+            self.value = 42
+
+    @app.get("/")
+    async def root(obj: Annotated[MyClass, Depends(MyClass)]):
+        return {"value": obj.value}
+
+    event = make_event("GET", "/")
+    response = await app(event, lambda_context)
+
+    # Should return 500 error because class dependencies are not allowed
+    assert response["statusCode"] == 500
+
+
+@pytest.mark.asyncio
+async def test_sync_generator_dependency_raises_error(make_event, lambda_context):
+    """Test that using a sync generator as dependency raises RuntimeError."""
+    app = FastAPI()
+
+    def sync_gen():
+        """Sync generator (not allowed)."""
+        yield 42
+
+    @app.get("/")
+    async def root(value: Annotated[int, Depends(sync_gen)]):
+        return {"value": value}
+
+    event = make_event("GET", "/")
+    response = await app(event, lambda_context)
+
+    # Should return 500 error because sync generators are not allowed
+    assert response["statusCode"] == 500
+
+
+@pytest.mark.asyncio
+async def test_dependency_with_request_injection(make_event, lambda_context):
+    """Test dependency with LambdaRequest auto-injection."""
+    from fastapi_lambda.request import LambdaRequest
+
+    app = FastAPI()
+
+    async def get_path(request: LambdaRequest):
+        yield request.path
+
+    @app.get("/test")
+    async def root(path: Annotated[str, Depends(get_path)]):
+        return {"path": path}
+
+    event = make_event("GET", "/test")
+    response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["path"] == "/test"

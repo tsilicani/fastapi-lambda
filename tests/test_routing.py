@@ -2,7 +2,7 @@
 
 import pytest
 
-from fastapi_lambda.app import FastAPI
+from fastapi_lambda.app import FastAPI, create_lambda_handler
 from tests.conftest import parse_response
 
 
@@ -17,6 +17,23 @@ async def test_get_route(make_event, lambda_context):
 
     event = make_event("GET", "/")
     response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["message"] == "hello"
+
+
+def test_get_route_with_lambda_handler(make_event, lambda_context):
+    """Test GET route using create_lambda_handler."""
+    app = FastAPI()
+
+    @app.get("/")
+    async def root():
+        return {"message": "hello"}
+
+    handler = create_lambda_handler(app)
+    event = make_event("GET", "/")
+    response = handler(event, lambda_context)
 
     status, body = parse_response(response)
     assert status == 200
@@ -95,8 +112,12 @@ async def test_multiple_methods(make_event, lambda_context):
     async def delete_resource():
         return {"method": "DELETE"}
 
+    @app.patch("/resource")
+    async def patch_resource():
+        return {"method": "PATCH"}
+
     # Test each method
-    for method in ["GET", "POST", "PUT", "DELETE"]:
+    for method in ["GET", "POST", "PUT", "DELETE", "PATCH"]:
         event = make_event(method, "/resource")
         response = await app(event, lambda_context)
         status, body = parse_response(response)
