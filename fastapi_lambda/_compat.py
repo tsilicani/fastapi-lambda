@@ -28,7 +28,7 @@ from pydantic.json_schema import JsonSchemaValue as JsonSchemaValue
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
 from typing_extensions import Annotated, Literal, get_args, get_origin
 
-from fastapi_lambda.types import ModelNameMap, UnionType
+from fastapi_lambda.types import UnionType
 
 sequence_annotation_to_type = {
     Sequence: list,
@@ -45,16 +45,6 @@ sequence_annotation_to_type = {
 }
 
 sequence_types = tuple(sequence_annotation_to_type.keys())
-
-
-try:
-    from pydantic_core.core_schema import (
-        with_info_plain_validator_function as with_info_plain_validator_function,
-    )
-except ImportError:  # pragma: no cover
-    from pydantic_core.core_schema import (  # noqa: F401
-        general_plain_validator_function as with_info_plain_validator_function,
-    )
 
 RequiredParam = PydanticUndefined
 Undefined = PydanticUndefined
@@ -85,11 +75,6 @@ class ModelField:
     @property
     def type_(self) -> Any:
         return self.field_info.annotation
-
-    @property
-    def default(self) -> Any:
-        """Get default value for field."""
-        return self.get_default()
 
     def __post_init__(self) -> None:
         with warnings.catch_warnings():
@@ -134,23 +119,10 @@ class ModelField:
         return id(self)
 
 
-def get_annotation_from_field_info(annotation: Any, field_info: FieldInfo) -> Any:
-    return annotation
-
-
-def _normalize_errors(errors: Sequence[Any]) -> List[Dict[str, Any]]:
-    return errors  # type: ignore[return-value]
-
-
-def _model_dump(model: BaseModel, mode: Literal["json", "python"] = "json", **kwargs: Any) -> Any:
-    return model.model_dump(mode=mode, **kwargs)
-
-
 def get_schema_from_model_field(
     *,
     field: ModelField,
     schema_generator: GenerateJsonSchema,
-    model_name_map: ModelNameMap,
     field_mapping: Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
     separate_input_output_schemas: bool = True,
 ) -> Dict[str, Any]:
@@ -162,15 +134,10 @@ def get_schema_from_model_field(
     return json_schema
 
 
-def get_compat_model_name_map(fields: List[ModelField]) -> ModelNameMap:
-    return {}
-
-
 def get_definitions(
     *,
     fields: List[ModelField],
     schema_generator: GenerateJsonSchema,
-    model_name_map: ModelNameMap,
     separate_input_output_schemas: bool = True,
 ) -> Tuple[
     Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
@@ -209,20 +176,12 @@ def get_missing_field_error(loc: Tuple[str, ...]) -> Dict[str, Any]:
     return error  # type: ignore[return-value]
 
 
-def get_model_fields(model: Type[BaseModel]) -> List[ModelField]:
-    return [ModelField(field_info=field_info, name=name) for name, field_info in model.model_fields.items()]
-
-
-# Pydantic v1 support removed - fastfn requires Pydantic v2 for Lambda optimization
-
-
 def _regenerate_error_with_loc(
     *, errors: Sequence[Any], loc_prefix: Tuple[Union[str, int], ...]
 ) -> List[Dict[str, Any]]:
     updated_loc_errors: List[Any] = [
-        {**err, "loc": loc_prefix + err.get("loc", ())} for err in _normalize_errors(errors)
+        {**err, "loc": loc_prefix + err.get("loc", ())} for err in errors
     ]
-
     return updated_loc_errors
 
 
@@ -230,16 +189,6 @@ def _annotation_is_sequence(annotation: Union[Type[Any], None]) -> bool:
     if lenient_issubclass(annotation, (str, bytes)):
         return False
     return lenient_issubclass(annotation, sequence_types)
-
-
-def field_annotation_is_sequence(annotation: Union[Type[Any], None]) -> bool:
-    origin = get_origin(annotation)
-    if origin is Union or origin is UnionType:
-        for arg in get_args(annotation):
-            if field_annotation_is_sequence(arg):
-                return True
-        return False
-    return _annotation_is_sequence(annotation) or _annotation_is_sequence(get_origin(annotation))
 
 
 def _annotation_is_complex(annotation: Union[Type[Any], None]) -> bool:
@@ -273,4 +222,4 @@ def field_annotation_is_scalar(annotation: Any) -> bool:
 
 @lru_cache
 def get_cached_model_fields(model: Type[BaseModel]) -> List[ModelField]:
-    return get_model_fields(model)
+    return [ModelField(field_info=field_info, name=name) for name, field_info in model.model_fields.items()]

@@ -22,7 +22,9 @@
       "Read(//tmp/**)",
       "Bash(docker:*)",
       "Bash(/dev/null)",
-      "Bash(poetry run sam:*)"
+      "Bash(poetry run sam:*)",
+      "WebSearch",
+      "Bash(poetry run vulture fastapi_lambda/ --min-confidence 80)"
     ],
     "deny": [],
     "ask": []

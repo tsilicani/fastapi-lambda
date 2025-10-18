@@ -40,7 +40,6 @@ from fastapi_lambda._compat import (
     copy_field_info,
     evaluate_forwardref,
     field_annotation_is_scalar,
-    get_annotation_from_field_info,
     get_missing_field_error,
     is_scalar_field,
     lenient_issubclass,
@@ -290,10 +289,7 @@ def analyze_param(
         elif isinstance(field_info, params.Param) and getattr(field_info, "in_", None) is None:
             field_info.in_ = params.ParamTypes.query
 
-        use_annotation_from_field_info = get_annotation_from_field_info(
-            use_annotation,
-            field_info,
-        )
+        use_annotation_from_field_info = use_annotation
 
         if not field_info.alias and getattr(field_info, "convert_underscores", None):
             alias = param_name.replace("_", "-")
@@ -558,7 +554,7 @@ def _validate_value_with_model_field(
         if field.required:
             return None, [get_missing_field_error(loc=loc)]
         else:
-            return deepcopy(field.default), []
+            return deepcopy(field.get_default()), []
 
     v_, errors_ = field.validate(value, values, loc=loc)
 

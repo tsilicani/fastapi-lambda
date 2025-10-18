@@ -20,7 +20,6 @@ from fastapi_lambda._compat import (
     JsonSchemaValue,
     ModelField,
     Undefined,
-    get_compat_model_name_map,
     get_definitions,
     get_schema_from_model_field,
     lenient_issubclass,
@@ -232,7 +231,6 @@ def _get_openapi_operation_parameters(
     *,
     dependant: Dependant,
     schema_generator: GenerateJsonSchema,
-    model_name_map: Dict[Any, str],
     field_mapping: Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
     separate_input_output_schemas: bool = True,
 ) -> List[Dict[str, Any]]:
@@ -269,7 +267,6 @@ def _get_openapi_operation_parameters(
             param_schema = get_schema_from_model_field(
                 field=param,
                 schema_generator=schema_generator,
-                model_name_map=model_name_map,
                 field_mapping=field_mapping,
                 separate_input_output_schemas=separate_input_output_schemas,
             )
@@ -317,7 +314,6 @@ def get_openapi_operation_request_body(
     *,
     body_field: Optional[ModelField],
     schema_generator: GenerateJsonSchema,
-    model_name_map: Dict[Any, str],
     field_mapping: Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
     separate_input_output_schemas: bool = True,
 ) -> Optional[Dict[str, Any]]:
@@ -331,7 +327,6 @@ def get_openapi_operation_request_body(
     body_schema = get_schema_from_model_field(
         field=body_field,
         schema_generator=schema_generator,
-        model_name_map=model_name_map,
         field_mapping=field_mapping,
         separate_input_output_schemas=separate_input_output_schemas,
     )
@@ -401,7 +396,6 @@ def get_openapi_path(
     responses: Optional[Dict[int, Dict[str, Any]]] = None,
     deprecated: Optional[bool] = None,
     schema_generator: GenerateJsonSchema,
-    model_name_map: Dict[Any, str],
     field_mapping: Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
     separate_input_output_schemas: bool = True,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -426,7 +420,6 @@ def get_openapi_path(
     parameters = _get_openapi_operation_parameters(
         dependant=dependant,
         schema_generator=schema_generator,
-        model_name_map=model_name_map,
         field_mapping=field_mapping,
         separate_input_output_schemas=separate_input_output_schemas,
     )
@@ -441,7 +434,6 @@ def get_openapi_path(
         request_body = get_openapi_operation_request_body(
             body_field=body_field,
             schema_generator=schema_generator,
-            model_name_map=model_name_map,
             field_mapping=field_mapping,
             separate_input_output_schemas=separate_input_output_schemas,
         )
@@ -456,7 +448,6 @@ def get_openapi_path(
         response_schema = get_schema_from_model_field(
             field=response_field,
             schema_generator=schema_generator,
-            model_name_map=model_name_map,
             field_mapping=field_mapping,
             separate_input_output_schemas=separate_input_output_schemas,
         )
@@ -522,12 +513,10 @@ def get_openapi_schema(
     all_fields = get_fields_from_routes(routes)
 
     # Generate schema definitions for all fields at once
-    model_name_map = get_compat_model_name_map(all_fields)
     schema_generator = GenerateJsonSchema(ref_template=REF_TEMPLATE)
     field_mapping, all_definitions = get_definitions(
         fields=all_fields,
         schema_generator=schema_generator,
-        model_name_map=model_name_map,
         separate_input_output_schemas=separate_input_output_schemas,
     )
 
@@ -559,7 +548,6 @@ def get_openapi_schema(
                 responses=getattr(route, "responses", None),
                 deprecated=getattr(route, "deprecated", None),
                 schema_generator=schema_generator,
-                model_name_map=model_name_map,
                 field_mapping=field_mapping,
                 separate_input_output_schemas=separate_input_output_schemas,
             )
