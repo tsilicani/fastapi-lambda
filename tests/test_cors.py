@@ -532,3 +532,144 @@ async def test_cors_on_http_exception():
     # CORS headers must be present
     assert "Access-Control-Allow-Origin" in response["headers"]
     assert response["headers"]["Access-Control-Allow-Origin"] == "*"
+
+
+@pytest.mark.asyncio
+async def test_cors_preflight_wildcard_headers():
+    """Test CORS preflight with wildcard headers - mirrors request headers."""
+    app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["https://example.com"],
+        allow_methods=["POST"],
+        allow_headers=["*"],  # Wildcard headers
+    )
+
+    @app.post("/test")
+    async def test_endpoint():
+        return {"message": "test"}
+
+    event: LambdaEvent = {
+        "httpMethod": "OPTIONS",
+        "path": "/test",
+        "headers": {
+            "origin": "https://example.com",
+            "access-control-request-method": "POST",
+            "access-control-request-headers": "X-Custom-1, X-Custom-2",
+        },
+        "queryStringParameters": None,
+        "pathParameters": None,
+        "body": None,
+        "isBase64Encoded": False,
+        "requestContext": {
+            "requestId": "test-123",
+            "accountId": "123456789012",
+            "stage": "prod",
+            "requestTime": "09/Apr/2015:12:34:56 +0000",
+            "requestTimeEpoch": 1428582896000,
+            "identity": {},
+            "domainName": "example.execute-api.us-east-1.amazonaws.com",
+            "apiId": "abc123",
+        },
+    }
+
+    response = await app(event, {})
+
+    assert response["statusCode"] == 200
+    # With wildcard headers, should mirror the requested headers
+    assert response["headers"]["Access-Control-Allow-Headers"] == "X-Custom-1, X-Custom-2"
+
+
+@pytest.mark.asyncio
+async def test_cors_vary_header_append():
+    """Test that Vary header is appended correctly when already present."""
+    from fastapi_lambda.response import JSONResponse
+
+    app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["https://example.com"],
+        allow_methods=["GET"],
+        allow_credentials=True,
+    )
+
+    @app.get("/test")
+    async def test_endpoint():
+        # Return response with existing Vary header
+        return JSONResponse({"message": "test"}, headers={"Vary": "Accept-Encoding"})
+
+    event: LambdaEvent = {
+        "httpMethod": "GET",
+        "path": "/test",
+        "headers": {
+            "origin": "https://example.com",
+        },
+        "queryStringParameters": None,
+        "pathParameters": None,
+        "body": None,
+        "isBase64Encoded": False,
+        "requestContext": {
+            "requestId": "test-123",
+            "accountId": "123456789012",
+            "stage": "prod",
+            "requestTime": "09/Apr/2015:12:34:56 +0000",
+            "requestTimeEpoch": 1428582896000,
+            "identity": {},
+            "domainName": "example.execute-api.us-east-1.amazonaws.com",
+            "apiId": "abc123",
+        },
+    }
+
+    response = await app(event, {})
+
+    assert response["statusCode"] == 200
+    # Should have both Accept-Encoding and Origin in Vary header
+    vary_header = response["headers"]["Vary"]
+    assert "Accept-Encoding" in vary_header
+    assert "Origin" in vary_header
+
+
+@pytest.mark.asyncio
+async def test_cors_preflight_wildcard_with_credentials():
+    """Test CORS preflight with wildcard origins AND credentials."""
+    app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["POST"],
+        allow_credentials=True,  # Forces explicit origin check
+    )
+
+    @app.post("/test")
+    async def test_endpoint():
+        return {"message": "test"}
+
+    event: LambdaEvent = {
+        "httpMethod": "OPTIONS",
+        "path": "/test",
+        "headers": {
+            "origin": "https://any-origin.com",
+            "access-control-request-method": "POST",
+        },
+        "queryStringParameters": None,
+        "pathParameters": None,
+        "body": None,
+        "isBase64Encoded": False,
+        "requestContext": {
+            "requestId": "test-123",
+            "accountId": "123456789012",
+            "stage": "prod",
+            "requestTime": "09/Apr/2015:12:34:56 +0000",
+            "requestTimeEpoch": 1428582896000,
+            "identity": {},
+            "domainName": "example.execute-api.us-east-1.amazonaws.com",
+            "apiId": "abc123",
+        },
+    }
+
+    response = await app(event, {})
+
+    assert response["statusCode"] == 200
+    # With credentials, must return specific origin (not wildcard)
+    assert response["headers"]["Access-Control-Allow-Origin"] == "https://any-origin.com"
+    assert response["headers"]["Access-Control-Allow-Credentials"] == "true"
