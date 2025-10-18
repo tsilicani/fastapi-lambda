@@ -27,6 +27,8 @@ from typing import (
 )
 
 from pydantic import BaseModel
+from pydantic._internal._typing_extra import eval_type_lenient as evaluate_forwardref
+from pydantic._internal._utils import lenient_issubclass
 from pydantic.fields import FieldInfo
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -38,11 +40,9 @@ from fastapi_lambda._compat import (
     Undefined,
     _regenerate_error_with_loc,
     copy_field_info,
-    evaluate_forwardref,
     field_annotation_is_scalar,
     get_missing_field_error,
     is_scalar_field,
-    lenient_issubclass,
 )
 from fastapi_lambda.request import LambdaRequest
 from fastapi_lambda.security import SecurityBase
@@ -586,9 +586,11 @@ def extract_params_from_dict(
 
     # Single Pydantic model as param
     if len(fields) == 1 and lenient_issubclass(first_field.type_, BaseModel):
-        from fastapi_lambda._compat import get_cached_model_fields
+        from fastapi_lambda._compat import ModelField
 
-        fields_to_extract = get_cached_model_fields(first_field.type_)
+        fields_to_extract = [
+            ModelField(field_info=field_info, name=name) for name, field_info in first_field.type_.model_fields.items()
+        ]
         single_not_embedded_field = True
     else:
         fields_to_extract = fields

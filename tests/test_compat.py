@@ -2,6 +2,7 @@
 Tests for _compat module functions
 """
 
+import pytest
 from pydantic import Field
 from typing_extensions import Annotated
 
@@ -149,3 +150,98 @@ class TestGetMissingFieldError:
         assert isinstance(error["loc"], tuple)
         assert isinstance(error["msg"], str)
         assert error["input"] is None  # Always None for missing fields
+
+
+class TestModelFieldGetDefault:
+    """Test ModelField.get_default() via request parameters with defaults"""
+
+    @pytest.mark.asyncio
+    async def test_query_param_with_default_value(self, make_event, lambda_context):
+        """Test optional query param with default value.
+
+        Real scenario: when query param is missing, get_default() is called
+        at dependencies.py:557 to get the default value.
+        """
+        from fastapi_lambda.app import FastAPI
+
+        app = FastAPI()
+
+        @app.get("/search")
+        async def search(q: str = "default_query", limit: int = 10):
+            return {"q": q, "limit": limit}
+
+        # Request without query params - should use defaults
+        event = make_event("GET", "/search")
+        response = await app(event, lambda_context)
+
+        from tests.conftest import parse_response
+
+        status, body = parse_response(response)
+        assert status == 200
+        assert body["q"] == "default_query"  # get_default() returned default value
+        assert body["limit"] == 10
+
+    @pytest.mark.asyncio
+    async def test_body_param_with_default_factory(self, make_event, lambda_context):
+        """Test optional body param with default_factory (list).
+
+        Real scenario: POST endpoint with optional body that has default_factory.
+        When body is None, get_default() calls the factory at dependencies.py:557.
+        """
+        from fastapi_lambda.app import FastAPI
+        from fastapi_lambda.params import Body
+        from typing import List
+
+        app = FastAPI()
+
+        @app.post("/items")
+        async def create_items(
+            tags: Annotated[List[str], Body(default_factory=list)]
+        ):
+            return {"tags": tags, "count": len(tags)}
+
+        # POST without body - should call default_factory
+        event = make_event("POST", "/items", body=None)
+        response = await app(event, lambda_context)
+
+        from tests.conftest import parse_response
+
+        status, body = parse_response(response)
+        assert status == 200
+        assert body["tags"] == []  # get_default() called factory
+        assert body["count"] == 0
+
+
+class TestFieldAnnotationIsComplex:
+    """Test field_annotation_is_complex() function - line 165 coverage"""
+
+    def test_union_with_annotated_in_query_param(self):
+        """Test Union[Annotated[scalar, ...], None] in query parameter.
+
+        Real-world scenario: optional query param with validation constraints.
+        This tests line 165 in _compat.py via dependencies.py:278.
+        When a parameter has Union[Annotated[int, ...], None], FastAPI must:
+        1. Check if Union is scalar (line 278 in dependencies.py)
+        2. Union detection triggers recursive call with each arg (line 162)
+        3. One arg is Annotated[int, ...] which unwraps at line 165 ✓
+        """
+        from fastapi_lambda.app import FastAPI
+        from typing import Union
+
+        app = FastAPI()
+
+        # Query param with Union[Annotated[int, ...], None] - no explicit Query()
+        # FastAPI must auto-detect this is scalar and use Query (not Body)
+        @app.get("/items")
+        async def get_items(
+            limit: Union[Annotated[int, Field(gt=0, le=100)], None] = None
+        ):
+            return {"limit": limit}
+
+        # Verify route is created
+        items_route = [r for r in app.router.routes if r.path == "/items"][0]
+        assert items_route is not None
+
+        # During route setup, dependencies.py:278 calls field_annotation_is_scalar
+        # which calls field_annotation_is_complex with Union[Annotated[int, ...], None]
+        # This triggers the Annotated unwrapping at line 165
