@@ -124,7 +124,6 @@ async def test_type_coercion(make_event, lambda_context):
     async def get_item(item_id: int):
         return {"item_id": item_id, "type": type(item_id).__name__}
 
-    # String "42" should be coerced to int 42
     event = make_event("GET", "/items/42", path_params={"item_id": "42"})
     response = await app(event, lambda_context)
 
@@ -132,3 +131,56 @@ async def test_type_coercion(make_event, lambda_context):
     assert status == 200
     assert body["item_id"] == 42
     assert body["type"] == "int"
+
+
+@pytest.mark.asyncio
+async def test_query_with_examples(make_event, lambda_context):
+    """Test Query parameter with examples."""
+    from fastapi_lambda.param_functions import Query
+
+    app = FastAPI()
+
+    @app.get("/search")
+    async def search(q: str = Query(examples={"example1": "test"})):
+        return {"query": q}
+
+    event = make_event("GET", "/search", None, {"q": "hello"})
+    response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["query"] == "hello"
+
+
+@pytest.mark.asyncio
+async def test_body_with_examples(make_event, lambda_context):
+    """Test Body parameter with examples."""
+    from fastapi_lambda.param_functions import Body
+
+    app = FastAPI()
+
+    @app.post("/items")
+    async def create_item(name: str = Body(examples=["widget", "gadget"])):
+        return {"name": name}
+
+    event = make_event("POST", "/items", "test_name")
+    response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["name"] == "test_name"
+
+
+@pytest.mark.asyncio
+async def test_depends_repr():
+    """Test Depends __repr__ for coverage."""
+    from fastapi_lambda.params import Depends
+
+    async def my_dep():
+        return 42
+
+    dep = Depends(my_dep)
+    assert "my_dep" in repr(dep)
+
+    dep_no_cache = Depends(my_dep, use_cache=False)
+    assert "use_cache=False" in repr(dep_no_cache)

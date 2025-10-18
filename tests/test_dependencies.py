@@ -192,3 +192,117 @@ async def test_dependency_with_request_injection(make_event, lambda_context):
     status, body = parse_response(response)
     assert status == 200
     assert body["path"] == "/test"
+
+
+@pytest.mark.asyncio
+async def test_query_and_body_params(make_event, lambda_context):
+    """Test query and body parameter extraction."""
+    from pydantic import BaseModel
+
+    app = FastAPI()
+
+    class Item(BaseModel):
+        name: str
+        price: float
+
+    @app.post("/items")
+    async def create_item(item: Item, source: str | None = None):
+        return {"item": item.model_dump(), "source": source}
+
+    event = make_event("POST", "/items", {"name": "Widget", "price": 9.99}, {"source": "api"})
+    response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["item"]["name"] == "Widget"
+    assert body["source"] == "api"
+
+
+@pytest.mark.asyncio
+async def test_callable_with_dunder_call(make_event, lambda_context):
+    """Test dependency using callable object with __call__."""
+    app = FastAPI()
+
+    class Counter:
+        def __init__(self):
+            self.count = 0
+
+        async def __call__(self):
+            self.count += 1
+            return self.count
+
+    counter = Counter()
+
+    @app.get("/count")
+    async def get_count(value: Annotated[int, Depends(counter)]):
+        return {"count": value}
+
+    event = make_event("GET", "/count")
+    response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_no_cache_dependency(make_event, lambda_context):
+    """Test dependency with use_cache=False."""
+    app = FastAPI()
+    call_count = []
+
+    async def get_value():
+        call_count.append(1)
+        return len(call_count)
+
+    @app.get("/")
+    async def root(
+        v1: Annotated[int, Depends(get_value, use_cache=False)],
+        v2: Annotated[int, Depends(get_value, use_cache=False)],
+    ):
+        return {"v1": v1, "v2": v2}
+
+    event = make_event("GET", "/")
+    response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["v1"] == 1
+    assert body["v2"] == 2
+    assert len(call_count) == 2
+
+
+@pytest.mark.asyncio
+async def test_path_param_with_annotation(make_event, lambda_context):
+    """Test path parameter with Annotated type."""
+    app = FastAPI()
+
+    @app.get("/users/{user_id}")
+    async def get_user(user_id: Annotated[int, "User ID"]):
+        return {"user_id": user_id}
+
+    event = make_event("GET", "/users/123")
+    response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["user_id"] == 123
+
+
+@pytest.mark.asyncio
+async def test_header_params(make_event, lambda_context):
+    """Test header parameter extraction."""
+    from fastapi_lambda.param_functions import Header
+
+    app = FastAPI()
+
+    @app.get("/auth")
+    async def check_auth(authorization: str = Header()):
+        return {"auth": authorization}
+
+    event = make_event("GET", "/auth", headers={"authorization": "Bearer token123"})
+    response = await app(event, lambda_context)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["auth"] == "Bearer token123"
