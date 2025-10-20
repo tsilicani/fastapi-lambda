@@ -2,6 +2,8 @@
 Lambda-native FastAPI application.
 
 Replaces fastapi.applications.FastAPI which is ASGI-based.
+
+Original FastAPI implementation: https://github.com/fastapi/fastapi/blob/master/fastapi/applications.py
 """
 
 import traceback

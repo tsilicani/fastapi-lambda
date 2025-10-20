@@ -2,7 +2,7 @@
 Lambda-native CORS middleware.
 
 Adapted from Starlette's CORS middleware for Lambda event handling.
-No ASGI - works directly with LambdaRequest/LambdaResponse.
+Original implementation: https://github.com/Kludex/starlette/blob/main/starlette/middleware/cors.py
 """
 
 from __future__ import annotations

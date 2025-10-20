@@ -57,9 +57,9 @@ FastAPI-Lambda is a lightweight, Lambda-optimized framework that maintains FastA
 ✅ **Security (Simplified)**
 - HTTP Bearer (JWT tokens)
 
-✅ **Middleware**
+✅ **Middleware** 🚧 (Refactoring in progress - see Active Development section)
 - AsyncExitStack for DI cleanup
-- Custom middleware support
+- Custom middleware support (currently post-processing only, being refactored to full pre/post pattern)
 
 ## Architecture
 
@@ -212,6 +212,161 @@ mypy fastapi_lambda/
 - **AWS Lambda:** https://aws.amazon.com/lambda/
 - **API Gateway:** https://aws.amazon.com/api-gateway/
 
+---
+
+## 🚧 Active Development: Middleware Stack Refactor
+
+### Goal
+Replicate FastAPI/Starlette middleware behavior faithfully while maintaining Lambda-native architecture (no ASGI).
+
+### Current Status: **IN PROGRESS**
+
+**Problem identified:**
+Current implementation applies middleware ONLY after routing (post-processing only). This prevents:
+- ❌ Pre-request processing (auth checks, logging, request modification)
+- ❌ Short-circuit behavior (early returns without calling handler)
+- ❌ CORS preflight handling before routing
+- ❌ Proper middleware stack execution order
+
+**Target behavior (FastAPI/Starlette pattern):**
+```
+Request → Middleware A (PRE) → Middleware B (PRE) → Handler → Middleware B (POST) → Middleware A (POST) → Response
+```
+
+### Implementation Plan
+
+#### Phase 1: Test Suite (TDD Approach) ✅ PRIORITY
+**File:** `tests/test_middleware.py`
+
+Test categories:
+- **Stack execution order** - Verify LIFO execution (last added = outermost)
+- **Pre-processing** - Middleware modifies request before routing
+- **Post-processing** - Middleware modifies response after handler
+- **Short-circuit** - Middleware returns early without calling handler (auth, rate limit, CORS preflight)
+- **Lazy stack building** - Stack built on first request, invalidated when middleware added
+- **Multiple middleware integration** - Realistic stack with 3+ layers
+- **Mock/stub helpers** - `CallRecorderMiddleware`, `ShortCircuitMiddleware` for testing
+
+**Coverage target:** 100% for middleware stack logic
+
+#### Phase 2: Core Infrastructure (`app.py`)
+- Add `_middleware_stack: Optional[Callable]` for lazy-built stack
+- Implement `build_middleware_stack()` - reverse-order wrapping (chain of responsibility pattern)
+- Refactor `__call__()` to use middleware stack
+- Remove old post-routing middleware loop
+
+#### Phase 3: CORS Rewrite (`cors.py`)
+Convert from `process_request(request, response)` to:
+```python
+class CORSMiddleware:
+    def __init__(self, app: Callable, **options):
+        self.app = app  # Next layer in stack
+
+    async def __call__(self, request: LambdaRequest) -> LambdaResponse:
+        # PRE: Handle preflight (short-circuit)
+        if is_preflight(request):
+            return preflight_response()
+
+        # CALL NEXT: Execute handler
+        response = await self.app(request)
+
+        # POST: Add CORS headers
+        add_cors_headers(response)
+        return response
+```
+
+#### Phase 4: Verify Compatibility
+- All 19 existing CORS tests must pass unchanged
+- No breaking changes to public API
+
+#### Phase 5: APIRouter Implementation
+**New file:** `fastapi_lambda/api_router.py`
+
+Features:
+- Route grouping with shared prefix/tags/dependencies
+- Router-level middleware (applied only to router routes)
+- `app.include_router(router)` support
+- FastAPI-compatible API
+
+#### Phase 6: APIRouter Tests
+**File:** `tests/test_api_router.py`
+- Router with prefix/tags
+- Router-level middleware
+- Nested routers
+
+#### Phase 7: Documentation
+- Update README with middleware examples
+- Update ARCHITECTURE.md with stack diagram
+- Migration notes (if any breaking changes)
+
+### Key Technical Decisions
+
+**Pattern:** Class-based middleware with `__call__` method (Starlette-compatible)
+```python
+app.add_middleware(CORSMiddleware, allow_origins=["*"])
+```
+
+**Stack building:** Lazy initialization on first request, invalidated when middleware added
+
+**Execution order:** Reverse order (LIFO) - last added middleware is outermost
+```python
+app.add_middleware(A)  # Innermost
+app.add_middleware(B)
+app.add_middleware(C)  # Outermost
+# Execution: C-PRE → B-PRE → A-PRE → Handler → A-POST → B-POST → C-POST
+```
+
+**Lambda-native:** Replace ASGI `(scope, receive, send)` with `LambdaRequest → LambdaResponse`
+
+### TODO Checklist
+
+- [ ] **Phase 1:** Create `tests/test_middleware.py` with comprehensive test suite
+  - [ ] Stack execution order tests (LIFO verification)
+  - [ ] Pre-processing tests (request modification)
+  - [ ] Post-processing tests (response modification)
+  - [ ] Short-circuit tests (auth, rate limit, CORS preflight)
+  - [ ] Lazy stack building tests
+  - [ ] Mock/stub helper middleware classes
+- [ ] **Phase 2:** Implement `build_middleware_stack()` in `app.py`
+  - [ ] Add `_middleware_stack` attribute
+  - [ ] Implement lazy stack building
+  - [ ] Refactor `__call__()` to use stack
+  - [ ] Remove old middleware loop
+- [ ] **Phase 3:** Rewrite `CORSMiddleware` with `__call__` pattern
+  - [ ] Convert to callable class with `app` parameter
+  - [ ] Implement pre-processing (preflight short-circuit)
+  - [ ] Implement post-processing (add CORS headers)
+  - [ ] Keep all existing helper methods
+- [ ] **Phase 4:** Verify all 19 CORS tests pass
+  - [ ] Run `pytest tests/test_cors.py -v`
+  - [ ] Fix any compatibility issues
+- [ ] **Phase 5:** Implement `APIRouter` class
+  - [ ] Create `fastapi_lambda/api_router.py`
+  - [ ] Implement route decorators (get/post/put/delete/patch)
+  - [ ] Add router-level middleware support
+  - [ ] Implement `include_router()` in FastAPI class
+- [ ] **Phase 6:** Create APIRouter tests
+  - [ ] Prefix/tags tests
+  - [ ] Router middleware tests
+  - [ ] Nested router tests
+- [ ] **Phase 7:** Update documentation
+  - [ ] README.md - middleware examples
+  - [ ] ARCHITECTURE.md - stack diagram
+  - [ ] This file - mark as complete
+
+### Estimated Timeline
+- Phase 1: 3 hours (test-first approach)
+- Phase 2: 2 hours (core refactor)
+- Phase 3: 1 hour (CORS rewrite)
+- Phase 4: 0.5 hours (verification)
+- Phase 5: 2 hours (APIRouter)
+- Phase 6: 1.5 hours (APIRouter tests)
+- Phase 7: 1 hour (docs)
+
+**Total: ~11 hours**
+
+---
+
 ## Future implementations
 
 ### Testing & QA
@@ -241,16 +396,10 @@ mypy fastapi_lambda/
   - FastAPI behavior: auto-runs sync deps in threadpool via Starlette
   - Trade-off: adds complexity and minimal overhead vs explicit async/sync separation
   - Consider: optional flag `auto_threadpool=True` for FastAPI compatibility
-- [ ] Add `APIRouter` support for better route organization
-  - Currently: Only single `FastAPI` app with direct route registration
-  - FastAPI standard: `APIRouter` allows grouping routes with shared prefix/dependencies/tags
-  - Benefits:
-    - Organize routes by domain (public, authenticated, admin)
-    - Apply dependencies at router level (auto-apply auth to all routes)
-    - Better code organization for large APIs (multi-file structure)
-    - `app.include_router(router, prefix="/api", dependencies=[Depends(...)])`
-  - Implementation: Create `APIRouter` class similar to `LambdaRouter` but composable
-  - Reference: `examples/jwt_auth.py` shows need for route organization patterns
+- [🚧] `APIRouter` support - **IN PROGRESS** (see Active Development section)
+  - Part of middleware stack refactor
+  - Includes route grouping with shared prefix/tags/dependencies
+  - Router-level middleware support
 
 ### CI/CD & Release
 - [x] Set up GitHub Actions CI (tests, coverage, linting, type-check)

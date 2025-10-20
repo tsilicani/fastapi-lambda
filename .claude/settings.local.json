@@ -24,7 +24,8 @@
       "Bash(/dev/null)",
       "Bash(poetry run sam:*)",
       "WebSearch",
-      "Bash(poetry run vulture fastapi_lambda/ --min-confidence 80)"
+      "Bash(poetry run vulture fastapi_lambda/ --min-confidence 80)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

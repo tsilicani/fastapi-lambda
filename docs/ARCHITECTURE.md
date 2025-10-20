@@ -22,7 +22,7 @@ FastAPI-Lambda è un framework Lambda-ottimizzato che elimina completamente il l
 
 FastAPI originale usa Starlette, che implementa ASGI (Asynchronous Server Gateway Interface):
 
-```
+```plain
 Lambda Event → Mangum/ASGI Adapter → ASGI scope/receive/send → Starlette → FastAPI
 ```
 
@@ -36,7 +36,7 @@ Questo introduce overhead:
 
 Gestione diretta degli eventi Lambda senza ASGI:
 
-```
+```plain
 Lambda Event → LambdaRequest → Router → Endpoint → LambdaResponse
 ```
 
