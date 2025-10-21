@@ -144,6 +144,11 @@ def send_email(background_tasks: BackgroundTasks):
 - Prefer flat over nested code
 - Explicit over implicit
 
+**File Structure:**
+- **Follow FastAPI/Starlette naming conventions**
+  - Match original source structure for familiarity and compatibility
+  - Reference: [Starlette structure](https://github.com/encode/starlette)
+
 **Speed:**
 - Direct Lambda event handling (no ASGI overhead)
 - Pre-compiled route patterns

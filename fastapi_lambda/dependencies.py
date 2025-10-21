@@ -44,7 +44,7 @@ from fastapi_lambda._compat import (
     get_missing_field_error,
     is_scalar_field,
 )
-from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.security import SecurityBase
 from fastapi_lambda.utils import create_model_field
 

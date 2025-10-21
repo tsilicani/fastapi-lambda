@@ -1,4 +1,5 @@
 """Pytest configuration and shared fixtures."""
+
 import json
 from typing import Any, Dict, Optional, Tuple
 
@@ -15,6 +16,7 @@ def parse_response(response: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
 @pytest.fixture
 def lambda_context():
     """Mock Lambda context."""
+
     class MockContext:
         request_id = "test-request-id"
         function_name = "test-function"
@@ -28,6 +30,7 @@ def lambda_context():
 @pytest.fixture
 def make_event():
     """Factory per creare Lambda events."""
+
     def _make(
         method: str = "GET",
         path: str = "/",

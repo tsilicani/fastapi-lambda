@@ -83,7 +83,7 @@ async def test_nested_dependencies(make_event, lambda_context):
 async def test_request_dependency(make_event, lambda_context):
     """Test injecting Request object."""
     app = FastAPI()
-    from fastapi_lambda.request import LambdaRequest
+    from fastapi_lambda.requests import LambdaRequest
 
     @app.get("/info", response_model=None)  # Disable response_model validation for Request
     async def info(request: LambdaRequest):
@@ -175,7 +175,7 @@ async def test_sync_generator_dependency_raises_error(make_event, lambda_context
 @pytest.mark.asyncio
 async def test_dependency_with_request_injection(make_event, lambda_context):
     """Test dependency with LambdaRequest auto-injection."""
-    from fastapi_lambda.request import LambdaRequest
+    from fastapi_lambda.requests import LambdaRequest
 
     app = FastAPI()
 

@@ -10,7 +10,7 @@ import traceback
 from typing import Any, Callable, Dict, List, Optional, Type
 
 from fastapi_lambda.openapi_schema import get_openapi_schema
-from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.router import LambdaRouter
 from fastapi_lambda.types import LambdaEvent
 

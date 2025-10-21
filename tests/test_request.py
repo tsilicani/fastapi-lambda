@@ -5,7 +5,7 @@ from typing import cast
 
 import pytest
 
-from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.types import LambdaEvent
 
 
@@ -22,7 +22,6 @@ async def test_v1_request(make_event):
     assert req.path_params == {"id": "123"}
     assert await req.body() == b'{"name": "test"}'
     assert await req.json() == {"name": "test"}
-    assert req.request_id == "test-request-id"
 
 
 @pytest.mark.asyncio
@@ -46,8 +45,8 @@ async def test_v2_format():
     assert req.method == "GET"
     assert req.path == "/v2/items"
     assert req.query_params == {"filter": "active", "limit": "10"}
-    assert req.client_ip == "1.2.3.4"
-    assert req.request_id == "v2-req-id"
+    assert req.client.host == "1.2.3.4"
+    assert req.client.port == 0
 
 
 @pytest.mark.asyncio
@@ -91,8 +90,7 @@ async def test_missing_fields():
     assert req.headers == {}
     assert req.query_params == {}
     assert req.path_params == {}
-    assert req.client_ip is None
-    assert req.request_id == ""
+    assert req.client.host is None
 
 
 @pytest.mark.asyncio
@@ -115,3 +113,25 @@ async def test_json_caching():
     json1 = await req.json()
     json2 = await req.json()
     assert json1 is json2
+
+
+@pytest.mark.asyncio
+async def test_client_tuple_unpacking():
+    """Test client can be unpacked as tuple (Starlette compatibility)."""
+    event: LambdaEvent = cast(
+        LambdaEvent,
+        {
+            "requestContext": {
+                "identity": {"sourceIp": "192.168.1.1"},
+            },
+        },
+    )
+    req = LambdaRequest(event)
+
+    # Test tuple unpacking
+    host, port = req.client
+    assert host == "192.168.1.1"
+    assert port == 0
+
+    # Test repr
+    assert "192.168.1.1" in repr(req.client)

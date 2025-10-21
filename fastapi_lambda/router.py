@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 
 # Import from lambda_dependencies (not from old ASGI code)
 from fastapi_lambda.dependencies import get_dependant, solve_dependencies
-from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import JSONResponse, LambdaResponse
 
 
