@@ -21,7 +21,7 @@ async def test_bearer_auth_success():
     async def protected(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]):
         return {"token": credentials.credentials, "scheme": credentials.scheme}
 
-    event = make_event("GET", "/protected", headers={"Authorization": "Bearer secret123"})
+    event = make_event(method="GET", path="/protected", headers={"Authorization": "Bearer secret123"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -40,7 +40,7 @@ async def test_bearer_auth_missing_token():
     async def protected(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]):
         return {"ok": True}
 
-    event = make_event("GET", "/protected")
+    event = make_event(method="GET", path="/protected")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -58,7 +58,7 @@ async def test_bearer_auth_invalid_scheme():
     async def protected(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]):
         return {"ok": True}
 
-    event = make_event("GET", "/protected", headers={"Authorization": "Basic abc"})
+    event = make_event(method="GET", path="/protected", headers={"Authorization": "Basic abc"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -80,7 +80,7 @@ async def test_bearer_auth_optional():
         return {"authenticated": False}
 
     # Without token
-    event = make_event("GET", "/maybe-protected")
+    event = make_event(method="GET", path="/maybe-protected")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -88,7 +88,7 @@ async def test_bearer_auth_optional():
     assert body["authenticated"] is False
 
     # With token
-    event = make_event("GET", "/maybe-protected", headers={"Authorization": "Bearer token123"})
+    event = make_event(method="GET", path="/maybe-protected", headers={"Authorization": "Bearer token123"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -113,7 +113,7 @@ async def test_user_context_from_token():
     async def read_user_me(user: Annotated[dict, Depends(get_current_user)]):
         return user
 
-    event = make_event("GET", "/me", headers={"Authorization": "Bearer my_token"})
+    event = make_event(method="GET", path="/me", headers={"Authorization": "Bearer my_token"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -133,7 +133,7 @@ async def test_http_base_custom_scheme():
     async def api_endpoint(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]):
         return {"scheme": credentials.scheme, "key": credentials.credentials}
 
-    event = make_event("GET", "/api", headers={"Authorization": "ApiKey abc123xyz"})
+    event = make_event(method="GET", path="/api", headers={"Authorization": "ApiKey abc123xyz"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -154,14 +154,14 @@ async def test_http_base_optional_auth():
             return {"protected": True, "token": credentials.credentials}
         return {"protected": False, "public": "data"}
 
-    event = make_event("GET", "/data")
+    event = make_event(method="GET", path="/data")
     response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
     assert body["protected"] is False
 
-    event = make_event("GET", "/data", headers={"Authorization": "Token xyz789"})
+    event = make_event(method="GET", path="/data", headers={"Authorization": "Token xyz789"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -180,7 +180,7 @@ async def test_bearer_optional_wrong_scheme():
     async def test_endpoint(credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)]):
         return {"has_auth": credentials is not None}
 
-    event = make_event("GET", "/test", headers={"Authorization": "Basic user:pass"})
+    event = make_event(method="GET", path="/test", headers={"Authorization": "Basic user:pass"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -198,7 +198,7 @@ async def test_http_base_missing_auth():
     async def protected(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]):
         return {"ok": True}
 
-    event = make_event("GET", "/protected")
+    event = make_event(method="GET", path="/protected")
     response = await app(event)
 
     status, body = parse_response(response)

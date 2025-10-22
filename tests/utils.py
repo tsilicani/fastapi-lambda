@@ -7,6 +7,7 @@ from fastapi_lambda.types import HttpMethod, LambdaEvent
 
 
 def make_event(
+    *,
     method: HttpMethod = "GET",
     path: str = "/",
     body: Any = None,

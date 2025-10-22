@@ -25,7 +25,7 @@ async def test_simple_dependency():
     async def root(value: Annotated[int, Depends(get_value)]):
         return {"value": value}
 
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -50,7 +50,7 @@ async def test_dependency_with_yield():
     async def root(db: Annotated[dict, Depends(get_db)]):
         return {"db_connected": db["connected"]}
 
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -75,7 +75,7 @@ async def test_nested_dependencies():
     async def root(b: Annotated[int, Depends(get_b)]):
         return {"result": b}
 
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -92,7 +92,7 @@ async def test_request_dependency():
     async def info(request: LambdaRequest):
         return {"method": request.method, "path": request.path}
 
-    event = make_event("GET", "/info")
+    event = make_event(method="GET", path="/info")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -121,7 +121,7 @@ async def test_dependency_caching():
     async def root(v1: Annotated[int, Depends(dep1)], v2: Annotated[int, Depends(dep2)]):
         return {"v1": v1, "v2": v2}
 
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -148,7 +148,7 @@ async def test_class_dependency_raises_error():
     async def root(obj: Annotated[MyClass, Depends(MyClass)]):
         return {"value": obj.value}
 
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = await app(event)
 
     # Should return 500 error because class dependencies are not allowed
@@ -168,7 +168,7 @@ async def test_sync_generator_dependency_raises_error():
     async def root(value: Annotated[int, Depends(sync_gen)]):
         return {"value": value}
 
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = await app(event)
 
     # Should return 500 error because sync generators are not allowed
@@ -188,7 +188,7 @@ async def test_dependency_with_request_injection():
     async def root(path: Annotated[str, Depends(get_path)]):
         return {"path": path}
 
-    event = make_event("GET", "/test")
+    event = make_event(method="GET", path="/test")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -210,7 +210,7 @@ async def test_query_and_body_params():
     async def create_item(item: Item, source: str | None = None):
         return {"item": item.model_dump(), "source": source}
 
-    event = make_event("POST", "/items", {"name": "Widget", "price": 9.99}, {"source": "api"})
+    event = make_event(method="POST", path="/items", body={"name": "Widget", "price": 9.99}, query={"source": "api"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -238,7 +238,7 @@ async def test_callable_with_dunder_call():
     async def get_count(value: Annotated[int, Depends(counter)]):
         return {"count": value}
 
-    event = make_event("GET", "/count")
+    event = make_event(method="GET", path="/count")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -263,7 +263,7 @@ async def test_no_cache_dependency():
     ):
         return {"v1": v1, "v2": v2}
 
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -282,7 +282,7 @@ async def test_path_param_with_annotation():
     async def get_user(user_id: Annotated[int, "User ID"]):
         return {"user_id": user_id}
 
-    event = make_event("GET", "/users/123")
+    event = make_event(method="GET", path="/users/123")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -300,7 +300,7 @@ async def test_header_params():
     async def check_auth(authorization: str = Header()):
         return {"auth": authorization}
 
-    event = make_event("GET", "/auth", headers={"authorization": "Bearer token123"})
+    event = make_event(method="GET", path="/auth", headers={"authorization": "Bearer token123"})
     response = await app(event)
 
     status, body = parse_response(response)

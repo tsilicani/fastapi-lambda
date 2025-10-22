@@ -23,7 +23,7 @@ async def test_get_route():
     async def root():
         return {"message": "hello"}
 
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -40,7 +40,7 @@ def test_get_route_with_lambda_handler():
         return {"message": "hello"}
 
     handler = create_lambda_handler(app)
-    event = make_event("GET", "/")
+    event = make_event(method="GET", path="/")
     response = handler(event)
 
     status, body = parse_response(response)
@@ -57,7 +57,7 @@ async def test_post_route():
     async def create_item():
         return {"created": True}
 
-    event = make_event("POST", "/items")
+    event = make_event(method="POST", path="/items")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -74,7 +74,7 @@ async def test_path_parameters():
     async def get_item(item_id: int):
         return {"item_id": item_id}
 
-    event = make_event("GET", "/items/42", path_params={"item_id": "42"})
+    event = make_event(method="GET", path="/items/42", path_params={"item_id": "42"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -91,7 +91,7 @@ async def test_query_parameters():
     async def search(q: str = "default"):
         return {"query": q}
 
-    event = make_event("GET", "/search", query={"q": "test"})
+    event = make_event(method="GET", path="/search", query={"q": "test"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -126,7 +126,7 @@ async def test_multiple_methods():
 
     # Test each method
     for method in ["GET", "POST", "PUT", "DELETE", "PATCH"]:
-        event = make_event(cast(HttpMethod, method), "/resource")
+        event = make_event(method=cast(HttpMethod, method), path="/resource")
         response = await app(event)
         status, body = parse_response(response)
         assert status == 200
@@ -142,7 +142,7 @@ async def test_404_not_found():
     async def exists():
         return {"ok": True}
 
-    event = make_event("GET", "/does-not-exist")
+    event = make_event(method="GET", path="/does-not-exist")
     response = await app(event)
 
     assert response["statusCode"] == 404
@@ -157,7 +157,7 @@ async def test_sync_endpoint():
     def sync_endpoint():
         return {"type": "sync"}
 
-    event = make_event("GET", "/sync")
+    event = make_event(method="GET", path="/sync")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -179,14 +179,14 @@ async def test_mixed_sync_async_endpoints():
         return {"type": "async"}
 
     # Test sync endpoint
-    event = make_event("GET", "/sync")
+    event = make_event(method="GET", path="/sync")
     response = await app(event)
     status, body = parse_response(response)
     assert status == 200
     assert body["type"] == "sync"
 
     # Test async endpoint
-    event = make_event("GET", "/async")
+    event = make_event(method="GET", path="/async")
     response = await app(event)
     status, body = parse_response(response)
     assert status == 200
@@ -207,14 +207,14 @@ async def test_path_convertor_types():
         return {"path": file_path}
 
     # Test int convertor
-    event = make_event("GET", "/items/123")
+    event = make_event(method="GET", path="/items/123")
     response = await app(event)
     status, body = parse_response(response)
     assert status == 200
     assert body["item_id"] == 123
 
     # Test path convertor (matches everything including slashes)
-    event = make_event("GET", "/files/folder/subfolder/file.txt")
+    event = make_event(method="GET", path="/files/folder/subfolder/file.txt")
     response = await app(event)
     status, body = parse_response(response)
     assert status == 200
@@ -242,7 +242,7 @@ async def test_post_with_invalid_json():
         return {"created": True}
 
     # Send invalid JSON
-    event = make_event("POST", "/items")
+    event = make_event(method="POST", path="/items")
     event["body"] = "not-valid-json{"
     response = await app(event)
 
@@ -267,7 +267,7 @@ async def test_response_model():
         # Return dict with extra field (should be filtered)
         return {"name": "Widget", "price": 9.99, "internal_id": 12345}
 
-    event = make_event("GET", "/items/1")
+    event = make_event(method="GET", path="/items/1")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -286,7 +286,7 @@ async def test_return_lambda_response_directly():
     async def custom_response():
         return LambdaResponse(content="custom content", status_code=201, headers={"X-Custom": "header"})
 
-    event = make_event("GET", "/custom")
+    event = make_event(method="GET", path="/custom")
     response = await app(event)
 
     assert response["statusCode"] == 201

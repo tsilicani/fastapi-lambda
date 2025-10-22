@@ -24,7 +24,7 @@ async def test_openapi_endpoint():
     async def root():
         return {"ok": True}
 
-    event = make_event("GET", "/openapi.json")
+    event = make_event(method="GET", path="/openapi.json")
     response = await app(event)
 
     assert response["statusCode"] == 200

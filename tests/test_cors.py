@@ -52,7 +52,7 @@ def app_with_cors_wildcard():
 @pytest.mark.asyncio
 async def test_cors_simple_request_allowed_origin(app_with_cors):
     """Test CORS headers on simple request with allowed origin."""
-    event = make_event("GET", "/test", headers={"origin": "https://example.com"})
+    event = make_event(method="GET", path="/test", headers={"origin": "https://example.com"})
     response = await app_with_cors(event, {})
 
     assert response["statusCode"] == 200
@@ -65,7 +65,7 @@ async def test_cors_simple_request_allowed_origin(app_with_cors):
 @pytest.mark.asyncio
 async def test_cors_simple_request_disallowed_origin(app_with_cors):
     """Test CORS headers on simple request with disallowed origin."""
-    event = make_event("GET", "/test", headers={"origin": "https://evil.com"})
+    event = make_event(method="GET", path="/test", headers={"origin": "https://evil.com"})
     response = await app_with_cors(event, {})
 
     # Request succeeds but no CORS headers added for disallowed origin
@@ -81,8 +81,8 @@ async def test_cors_simple_request_disallowed_origin(app_with_cors):
 async def test_cors_preflight_allowed(app_with_cors):
     """Test CORS preflight request with allowed origin and method."""
     event = make_event(
-        "OPTIONS",
-        "/test",
+        method="OPTIONS",
+        path="/test",
         headers={
             "origin": "https://example.com",
             "access-control-request-method": "POST",
@@ -104,8 +104,8 @@ async def test_cors_preflight_allowed(app_with_cors):
 async def test_cors_preflight_disallowed_origin(app_with_cors):
     """Test CORS preflight request with disallowed origin."""
     event = make_event(
-        "OPTIONS",
-        "/test",
+        method="OPTIONS",
+        path="/test",
         headers={"origin": "https://evil.com", "access-control-request-method": "GET"},
     )
     response = await app_with_cors(event, {})
@@ -118,8 +118,8 @@ async def test_cors_preflight_disallowed_origin(app_with_cors):
 async def test_cors_preflight_disallowed_method(app_with_cors):
     """Test CORS preflight request with disallowed method."""
     event = make_event(
-        "OPTIONS",
-        "/test",
+        method="OPTIONS",
+        path="/test",
         headers={"origin": "https://example.com", "access-control-request-method": "DELETE"},
     )
     response = await app_with_cors(event, {})
@@ -132,8 +132,8 @@ async def test_cors_preflight_disallowed_method(app_with_cors):
 async def test_cors_preflight_disallowed_header(app_with_cors):
     """Test CORS preflight request with disallowed header."""
     event = make_event(
-        "OPTIONS",
-        "/test",
+        method="OPTIONS",
+        path="/test",
         headers={
             "origin": "https://example.com",
             "access-control-request-method": "GET",
@@ -149,7 +149,7 @@ async def test_cors_preflight_disallowed_header(app_with_cors):
 @pytest.mark.asyncio
 async def test_cors_wildcard_origin(app_with_cors_wildcard):
     """Test CORS with wildcard origin."""
-    event = make_event("GET", "/test", headers={"origin": "https://any-origin.com"})
+    event = make_event(method="GET", path="/test", headers={"origin": "https://any-origin.com"})
     response = await app_with_cors_wildcard(event, {})
 
     assert response["statusCode"] == 200
@@ -159,7 +159,7 @@ async def test_cors_wildcard_origin(app_with_cors_wildcard):
 @pytest.mark.asyncio
 async def test_cors_wildcard_with_cookies(app_with_cors_wildcard):
     """Test CORS wildcard with cookies - should return specific origin."""
-    event = make_event("GET", "/test", headers={"origin": "https://example.com", "cookie": "session=abc123"})
+    event = make_event(method="GET", path="/test", headers={"origin": "https://example.com", "cookie": "session=abc123"})
     response = await app_with_cors_wildcard(event, {})
 
     assert response["statusCode"] == 200
@@ -171,7 +171,7 @@ async def test_cors_wildcard_with_cookies(app_with_cors_wildcard):
 @pytest.mark.asyncio
 async def test_cors_no_origin_header(app_with_cors):
     """Test request without origin header - no CORS processing."""
-    event = make_event("GET", "/test")
+    event = make_event(method="GET", path="/test")
     response = await app_with_cors(event, {})
 
     assert response["statusCode"] == 200
@@ -193,7 +193,7 @@ async def test_cors_regex_origin():
     async def test_endpoint():
         return {"message": "test"}
 
-    event = make_event("GET", "/test", headers={"origin": "https://subdomain.example.com"})
+    event = make_event(method="GET", path="/test", headers={"origin": "https://subdomain.example.com"})
     response = await app(event, {})
 
     assert response["statusCode"] == 200
@@ -215,7 +215,7 @@ async def test_cors_on_unhandled_exception():
     def crash_endpoint():
         raise Exception("Unhandled exception!")
 
-    event = make_event("GET", "/crash", headers={"origin": "https://example.com"})
+    event = make_event(method="GET", path="/crash", headers={"origin": "https://example.com"})
     response = await app(event, {})
 
     # Should return 500
@@ -242,7 +242,7 @@ async def test_cors_on_unhandled_exception_production():
     def crash_endpoint():
         raise Exception("Unhandled exception!")
 
-    event = make_event("GET", "/crash", headers={"origin": "https://example.com"})
+    event = make_event(method="GET", path="/crash", headers={"origin": "https://example.com"})
     response = await app(event, {})
 
     # Should return 500
@@ -269,7 +269,7 @@ async def test_cors_on_http_exception():
     def not_found_endpoint():
         raise HTTPException(status_code=404, detail="Not found")
 
-    event = make_event("GET", "/not-found", headers={"origin": "https://example.com"})
+    event = make_event(method="GET", path="/not-found", headers={"origin": "https://example.com"})
     response = await app(event, {})
 
     # Should return 404
@@ -296,8 +296,8 @@ async def test_cors_preflight_wildcard_headers():
         return {"message": "test"}
 
     event = make_event(
-        "OPTIONS",
-        "/test",
+        method="OPTIONS",
+        path="/test",
         headers={
             "origin": "https://example.com",
             "access-control-request-method": "POST",
@@ -328,7 +328,7 @@ async def test_cors_vary_header_append():
         # Return response with existing Vary header
         return JSONResponse({"message": "test"}, headers={"Vary": "Accept-Encoding"})
 
-    event = make_event("GET", "/test", headers={"origin": "https://example.com"})
+    event = make_event(method="GET", path="/test", headers={"origin": "https://example.com"})
     response = await app(event, {})
 
     assert response["statusCode"] == 200
@@ -354,8 +354,8 @@ async def test_cors_preflight_wildcard_with_credentials():
         return {"message": "test"}
 
     event = make_event(
-        "OPTIONS",
-        "/test",
+        method="OPTIONS",
+        path="/test",
         headers={"origin": "https://any-origin.com", "access-control-request-method": "POST"},
     )
     response = await app(event, {})

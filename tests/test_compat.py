@@ -175,7 +175,7 @@ class TestModelFieldGetDefault:
             return {"q": q, "limit": limit}
 
         # Request without query params - should use defaults
-        event = make_event("GET", "/search")
+        event = make_event(method="GET", path="/search")
         response = await app(event)
 
         status, body = parse_response(response)
@@ -198,7 +198,7 @@ class TestModelFieldGetDefault:
             return {"tags": tags, "count": len(tags)}
 
         # POST without body - should call default_factory
-        event = make_event("POST", "/items", body=None)
+        event = make_event(method="POST", path="/items", body=None)
         response = await app(event)
 
         status, body = parse_response(response)

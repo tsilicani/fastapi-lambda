@@ -16,7 +16,7 @@ async def test_json_response_unicode():
     async def get_unicode():
         return JSONResponse({"msg": "Hello 世界 🚀"})
 
-    event = make_event("GET", "/unicode")
+    event = make_event(method="GET", path="/unicode")
     response = await app(event)
 
     assert "世界" in response["body"]
@@ -32,7 +32,7 @@ async def test_html_response():
     async def get_page():
         return HTMLResponse("<html><body>Test</body></html>")
 
-    event = make_event("GET", "/page")
+    event = make_event(method="GET", path="/page")
     response = await app(event)
 
     assert response["statusCode"] == 200
@@ -49,7 +49,7 @@ async def test_plain_text_response():
     async def get_text():
         return PlainTextResponse("Plain text data")
 
-    event = make_event("GET", "/text")
+    event = make_event(method="GET", path="/text")
     response = await app(event)
 
     assert response["statusCode"] == 200
@@ -66,7 +66,7 @@ async def test_redirect_response():
     async def old_endpoint():
         return RedirectResponse("/new", status_code=301)
 
-    event = make_event("GET", "/old")
+    event = make_event(method="GET", path="/old")
     response = await app(event)
 
     assert response["statusCode"] == 301
@@ -83,7 +83,7 @@ async def test_redirect_with_custom_headers():
     async def redirect():
         return RedirectResponse("/target", headers={"X-Custom": "value"})
 
-    event = make_event("GET", "/redirect")
+    event = make_event(method="GET", path="/redirect")
     response = await app(event)
 
     assert response["statusCode"] == 307
@@ -101,7 +101,7 @@ async def test_lambda_response_none_content():
     async def empty():
         return LambdaResponse(None, status_code=204)
 
-    event = make_event("GET", "/empty")
+    event = make_event(method="GET", path="/empty")
     response = await app(event)
 
     assert response["statusCode"] == 204
@@ -118,7 +118,7 @@ async def test_lambda_response_bytes_content():
     async def get_bytes():
         return LambdaResponse(b"Binary data")
 
-    event = make_event("GET", "/bytes")
+    event = make_event(method="GET", path="/bytes")
     response = await app(event)
 
     assert response["body"] == "Binary data"
@@ -134,7 +134,7 @@ async def test_lambda_response_int_content():
     async def get_number():
         return LambdaResponse(12345)
 
-    event = make_event("GET", "/number")
+    event = make_event(method="GET", path="/number")
     response = await app(event)
 
     assert response["body"] == "12345"
@@ -150,7 +150,7 @@ async def test_response_media_type_sets_content_type():
     async def get_xml():
         return LambdaResponse("<xml/>", media_type="application/xml")
 
-    event = make_event("GET", "/xml")
+    event = make_event(method="GET", path="/xml")
     response = await app(event)
 
     assert response["headers"]["Content-Type"] == "application/xml"

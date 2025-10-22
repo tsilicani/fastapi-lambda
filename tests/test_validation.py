@@ -34,7 +34,7 @@ async def test_request_body_validation():
         return {"name": item.name, "price": item.price}
 
     # Valid body
-    event = make_event("POST", "/items", body={"name": "Widget", "price": 9.99})
+    event = make_event(method="POST", path="/items", body={"name": "Widget", "price": 9.99})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -53,7 +53,7 @@ async def test_validation_error_422():
         return {"ok": True}
 
     # Invalid body (missing required fields)
-    event = make_event("POST", "/items", body={"invalid": "data"})
+    event = make_event(method="POST", path="/items", body={"invalid": "data"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -76,7 +76,7 @@ async def test_response_model_serialization():
             "secret": "should_not_appear",  # Extra field
         }
 
-    event = make_event("GET", "/items/1", path_params={"item_id": "1"})
+    event = make_event(method="GET", path="/items/1", path_params={"item_id": "1"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -98,7 +98,7 @@ async def test_optional_fields():
         return {"name": item.name, "has_description": item.description is not None}
 
     # Without optional field
-    event = make_event("POST", "/items", body={"name": "Widget", "price": 9.99})
+    event = make_event(method="POST", path="/items", body={"name": "Widget", "price": 9.99})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -107,8 +107,8 @@ async def test_optional_fields():
 
     # With optional field
     event = make_event(
-        "POST",
-        "/items",
+        method="POST",
+        path="/items",
         body={"name": "Widget", "price": 9.99, "description": "A nice widget"},
     )
     response = await app(event)
@@ -127,7 +127,7 @@ async def test_type_coercion():
     async def get_item(item_id: int):
         return {"item_id": item_id, "type": type(item_id).__name__}
 
-    event = make_event("GET", "/items/42", path_params={"item_id": "42"})
+    event = make_event(method="GET", path="/items/42", path_params={"item_id": "42"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -146,7 +146,7 @@ async def test_query_with_examples():
     async def search(q: str = Query(examples=[{"example1": "test"}])):
         return {"query": q}
 
-    event = make_event("GET", "/search", None, {"q": "hello"})
+    event = make_event(method="GET", path="/search", query={"q": "hello"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -164,7 +164,7 @@ async def test_body_with_examples():
     async def create_item(name: str = Body(examples=["widget", "gadget"])):
         return {"name": name}
 
-    event = make_event("POST", "/items", "test_name")
+    event = make_event(method="POST", path="/items", body="test_name")
     response = await app(event)
 
     status, body = parse_response(response)

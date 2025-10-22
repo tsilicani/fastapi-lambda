@@ -16,7 +16,7 @@ async def test_path_function():
     async def get_item(item_id: int = Path(gt=0, description="Item ID")):
         return {"item_id": item_id}
 
-    event = make_event("GET", "/items/42")
+    event = make_event(method="GET", path="/items/42")
     response = await app(event)
 
     status, body = parse_response(response)
@@ -33,7 +33,7 @@ async def test_header_function():
     async def protected(x_api_key: str = Header(description="API Key")):
         return {"key": x_api_key}
 
-    event = make_event("GET", "/protected", headers={"x-api-key": "secret123"})
+    event = make_event(method="GET", path="/protected", headers={"x-api-key": "secret123"})
     response = await app(event)
 
     status, body = parse_response(response)
@@ -53,7 +53,7 @@ async def test_security_function():
     async def secure_endpoint(user=Security(get_current_user, scopes=["read", "write"])):
         return user
 
-    event = make_event("GET", "/secure")
+    event = make_event(method="GET", path="/secure")
     response = await app(event)
 
     status, body = parse_response(response)
