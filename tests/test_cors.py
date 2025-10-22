@@ -159,7 +159,9 @@ async def test_cors_wildcard_origin(app_with_cors_wildcard):
 @pytest.mark.asyncio
 async def test_cors_wildcard_with_cookies(app_with_cors_wildcard):
     """Test CORS wildcard with cookies - should return specific origin."""
-    event = make_event(method="GET", path="/test", headers={"origin": "https://example.com", "cookie": "session=abc123"})
+    event = make_event(
+        method="GET", path="/test", headers={"origin": "https://example.com", "cookie": "session=abc123"}
+    )
     response = await app_with_cors_wildcard(event, {})
 
     assert response["statusCode"] == 200

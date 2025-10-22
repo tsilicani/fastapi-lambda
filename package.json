@@ -7,6 +7,8 @@
     "vulture": "poetry run vulture fastapi_lambda/ --min-confidence 50 --sort-by-size | head -500",
     "typecheck": "poetry run pyright",
     "lint": "poetry run flake8",
+    "format": "poetry run black fastapi_lambda/ tests/",
+    "format:check": "poetry run black --check fastapi_lambda/ tests/",
     "htmlcov": "open htmlcov/index.html"
   },
   "devDependencies": {

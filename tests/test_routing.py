@@ -227,6 +227,7 @@ async def test_invalid_convertor_type():
     app = FastAPI()
 
     with pytest.raises(ValueError, match="Unknown path convertor 'invalid'"):
+
         @app.get("/items/{item_id:invalid}")
         async def get_item(item_id):
             return {}
@@ -309,6 +310,7 @@ def test_invalid_response_model():
 
     # Try to use LambdaResponse as response_model (invalid - it's not a Pydantic model)
     with pytest.raises(FastAPIError, match="Invalid args for response field"):
+
         @app.get("/invalid", response_model=LambdaResponse)  # type: ignore
         async def invalid_endpoint():
             return {"data": "test"}
