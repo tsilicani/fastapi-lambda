@@ -156,7 +156,7 @@ class TestModelFieldGetDefault:
     """Test ModelField.get_default() via request parameters with defaults"""
 
     @pytest.mark.asyncio
-    async def test_query_param_with_default_value(self, make_event, lambda_context):
+    async def test_query_param_with_default_value(self, make_event):
         """Test optional query param with default value.
 
         Real scenario: when query param is missing, get_default() is called
@@ -172,7 +172,7 @@ class TestModelFieldGetDefault:
 
         # Request without query params - should use defaults
         event = make_event("GET", "/search")
-        response = await app(event, lambda_context)
+        response = await app(event)
 
         from tests.conftest import parse_response
 
@@ -182,7 +182,7 @@ class TestModelFieldGetDefault:
         assert body["limit"] == 10
 
     @pytest.mark.asyncio
-    async def test_body_param_with_default_factory(self, make_event, lambda_context):
+    async def test_body_param_with_default_factory(self, make_event):
         """Test optional body param with default_factory (list).
 
         Real scenario: POST endpoint with optional body that has default_factory.
@@ -202,7 +202,7 @@ class TestModelFieldGetDefault:
 
         # POST without body - should call default_factory
         event = make_event("POST", "/items", body=None)
-        response = await app(event, lambda_context)
+        response = await app(event)
 
         from tests.conftest import parse_response
 

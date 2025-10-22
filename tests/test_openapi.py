@@ -14,7 +14,7 @@ class Item(BaseModel):
 
 
 @pytest.mark.asyncio
-async def test_openapi_endpoint(make_event, lambda_context):
+async def test_openapi_endpoint(make_event):
     """Test /openapi.json endpoint exists."""
     app = FastAPI(title="Test API", version="1.0.0")
 
@@ -23,7 +23,7 @@ async def test_openapi_endpoint(make_event, lambda_context):
         return {"ok": True}
 
     event = make_event("GET", "/openapi.json")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["statusCode"] == 200
     assert "application/json" in response["headers"]["Content-Type"]

@@ -12,4 +12,6 @@ class Address(NamedTuple):
     """Client address (compatible with Starlette) - named tuple with host and port."""
 
     host: Optional[str]
+    """Host IP address."""
     port: int = 0
+    """Port is always 0 as it's not provided by API Gateway."""

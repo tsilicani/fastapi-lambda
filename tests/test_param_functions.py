@@ -6,7 +6,7 @@ from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
-async def test_path_function(make_event, lambda_context):
+async def test_path_function(make_event):
     """Test Path() wrapper function."""
     from fastapi_lambda.param_functions import Path
 
@@ -17,7 +17,7 @@ async def test_path_function(make_event, lambda_context):
         return {"item_id": item_id}
 
     event = make_event("GET", "/items/42")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -25,7 +25,7 @@ async def test_path_function(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_header_function(make_event, lambda_context):
+async def test_header_function(make_event):
     """Test Header() wrapper function."""
     from fastapi_lambda.param_functions import Header
 
@@ -36,7 +36,7 @@ async def test_header_function(make_event, lambda_context):
         return {"key": x_api_key}
 
     event = make_event("GET", "/protected", headers={"x-api-key": "secret123"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -44,7 +44,7 @@ async def test_header_function(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_security_function(make_event, lambda_context):
+async def test_security_function(make_event):
     """Test Security() wrapper function."""
     from fastapi_lambda.param_functions import Security
 
@@ -58,7 +58,7 @@ async def test_security_function(make_event, lambda_context):
         return user
 
     event = make_event("GET", "/secure")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200

@@ -10,7 +10,7 @@ from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
-async def test_simple_dependency(make_event, lambda_context):
+async def test_simple_dependency(make_event):
     """Test simple dependency injection."""
     app = FastAPI()
 
@@ -22,7 +22,7 @@ async def test_simple_dependency(make_event, lambda_context):
         return {"value": value}
 
     event = make_event("GET", "/")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -30,7 +30,7 @@ async def test_simple_dependency(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_dependency_with_yield(make_event, lambda_context):
+async def test_dependency_with_yield(make_event):
     """Test dependency with yield (cleanup)."""
     app = FastAPI()
     cleanup_called = []
@@ -47,7 +47,7 @@ async def test_dependency_with_yield(make_event, lambda_context):
         return {"db_connected": db["connected"]}
 
     event = make_event("GET", "/")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -57,7 +57,7 @@ async def test_dependency_with_yield(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_nested_dependencies(make_event, lambda_context):
+async def test_nested_dependencies(make_event):
     """Test nested dependencies."""
     app = FastAPI()
 
@@ -72,7 +72,7 @@ async def test_nested_dependencies(make_event, lambda_context):
         return {"result": b}
 
     event = make_event("GET", "/")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -80,7 +80,7 @@ async def test_nested_dependencies(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_request_dependency(make_event, lambda_context):
+async def test_request_dependency(make_event):
     """Test injecting Request object."""
     app = FastAPI()
     from fastapi_lambda.requests import LambdaRequest
@@ -90,7 +90,7 @@ async def test_request_dependency(make_event, lambda_context):
         return {"method": request.method, "path": request.path}
 
     event = make_event("GET", "/info")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -99,7 +99,7 @@ async def test_request_dependency(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_dependency_caching(make_event, lambda_context):
+async def test_dependency_caching(make_event):
     """Test that dependencies are cached within a request."""
     app = FastAPI()
     call_count = []
@@ -119,7 +119,7 @@ async def test_dependency_caching(make_event, lambda_context):
         return {"v1": v1, "v2": v2}
 
     event = make_event("GET", "/")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -131,7 +131,7 @@ async def test_dependency_caching(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_class_dependency_raises_error(make_event, lambda_context):
+async def test_class_dependency_raises_error(make_event):
     """Test that using a class as dependency raises RuntimeError."""
     app = FastAPI()
 
@@ -146,14 +146,14 @@ async def test_class_dependency_raises_error(make_event, lambda_context):
         return {"value": obj.value}
 
     event = make_event("GET", "/")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     # Should return 500 error because class dependencies are not allowed
     assert response["statusCode"] == 500
 
 
 @pytest.mark.asyncio
-async def test_sync_generator_dependency_raises_error(make_event, lambda_context):
+async def test_sync_generator_dependency_raises_error(make_event):
     """Test that using a sync generator as dependency raises RuntimeError."""
     app = FastAPI()
 
@@ -166,14 +166,14 @@ async def test_sync_generator_dependency_raises_error(make_event, lambda_context
         return {"value": value}
 
     event = make_event("GET", "/")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     # Should return 500 error because sync generators are not allowed
     assert response["statusCode"] == 500
 
 
 @pytest.mark.asyncio
-async def test_dependency_with_request_injection(make_event, lambda_context):
+async def test_dependency_with_request_injection(make_event):
     """Test dependency with LambdaRequest auto-injection."""
     from fastapi_lambda.requests import LambdaRequest
 
@@ -187,7 +187,7 @@ async def test_dependency_with_request_injection(make_event, lambda_context):
         return {"path": path}
 
     event = make_event("GET", "/test")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -195,7 +195,7 @@ async def test_dependency_with_request_injection(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_query_and_body_params(make_event, lambda_context):
+async def test_query_and_body_params(make_event):
     """Test query and body parameter extraction."""
     from pydantic import BaseModel
 
@@ -210,7 +210,7 @@ async def test_query_and_body_params(make_event, lambda_context):
         return {"item": item.model_dump(), "source": source}
 
     event = make_event("POST", "/items", {"name": "Widget", "price": 9.99}, {"source": "api"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -219,7 +219,7 @@ async def test_query_and_body_params(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_callable_with_dunder_call(make_event, lambda_context):
+async def test_callable_with_dunder_call(make_event):
     """Test dependency using callable object with __call__."""
     app = FastAPI()
 
@@ -238,7 +238,7 @@ async def test_callable_with_dunder_call(make_event, lambda_context):
         return {"count": value}
 
     event = make_event("GET", "/count")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -246,7 +246,7 @@ async def test_callable_with_dunder_call(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_no_cache_dependency(make_event, lambda_context):
+async def test_no_cache_dependency(make_event):
     """Test dependency with use_cache=False."""
     app = FastAPI()
     call_count = []
@@ -263,7 +263,7 @@ async def test_no_cache_dependency(make_event, lambda_context):
         return {"v1": v1, "v2": v2}
 
     event = make_event("GET", "/")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -273,7 +273,7 @@ async def test_no_cache_dependency(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_path_param_with_annotation(make_event, lambda_context):
+async def test_path_param_with_annotation(make_event):
     """Test path parameter with Annotated type."""
     app = FastAPI()
 
@@ -282,7 +282,7 @@ async def test_path_param_with_annotation(make_event, lambda_context):
         return {"user_id": user_id}
 
     event = make_event("GET", "/users/123")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -290,7 +290,7 @@ async def test_path_param_with_annotation(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_header_params(make_event, lambda_context):
+async def test_header_params(make_event):
     """Test header parameter extraction."""
     from fastapi_lambda.param_functions import Header
 
@@ -301,7 +301,7 @@ async def test_header_params(make_event, lambda_context):
         return {"auth": authorization}
 
     event = make_event("GET", "/auth", headers={"authorization": "Bearer token123"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200

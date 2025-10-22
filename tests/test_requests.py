@@ -7,6 +7,7 @@ import pytest
 
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.types import LambdaEvent
+from tests.utils import make_event
 
 
 @pytest.mark.asyncio
@@ -115,18 +116,9 @@ async def test_json_caching():
     assert json1 is json2
 
 
-@pytest.mark.asyncio
-async def test_client_tuple_unpacking():
+def test_client_tuple_unpacking():
     """Test client can be unpacked as tuple (Starlette compatibility)."""
-    event: LambdaEvent = cast(
-        LambdaEvent,
-        {
-            "requestContext": {
-                "identity": {"sourceIp": "192.168.1.1"},
-            },
-        },
-    )
-    req = LambdaRequest(event)
+    req = LambdaRequest(make_event(source_ip="192.168.1.1"))
 
     # Test tuple unpacking
     host, port = req.client

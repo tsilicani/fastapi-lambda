@@ -11,7 +11,7 @@ from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
-async def test_bearer_auth_success(make_event, lambda_context):
+async def test_bearer_auth_success(make_event):
     """Test Bearer authentication with valid token."""
     app = FastAPI()
     security = HTTPBearer()
@@ -21,7 +21,7 @@ async def test_bearer_auth_success(make_event, lambda_context):
         return {"token": credentials.credentials, "scheme": credentials.scheme}
 
     event = make_event("GET", "/protected", headers={"Authorization": "Bearer secret123"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -30,7 +30,7 @@ async def test_bearer_auth_success(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_bearer_auth_missing_token(make_event, lambda_context):
+async def test_bearer_auth_missing_token(make_event):
     """Test Bearer authentication without token returns 403."""
     app = FastAPI()
     security = HTTPBearer()
@@ -40,7 +40,7 @@ async def test_bearer_auth_missing_token(make_event, lambda_context):
         return {"ok": True}
 
     event = make_event("GET", "/protected")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 403
@@ -48,7 +48,7 @@ async def test_bearer_auth_missing_token(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_bearer_auth_invalid_scheme(make_event, lambda_context):
+async def test_bearer_auth_invalid_scheme(make_event):
     """Test Bearer authentication with wrong scheme returns 403."""
     app = FastAPI()
     security = HTTPBearer()
@@ -58,14 +58,14 @@ async def test_bearer_auth_invalid_scheme(make_event, lambda_context):
         return {"ok": True}
 
     event = make_event("GET", "/protected", headers={"Authorization": "Basic abc"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 403
 
 
 @pytest.mark.asyncio
-async def test_bearer_auth_optional(make_event, lambda_context):
+async def test_bearer_auth_optional(make_event):
     """Test optional Bearer authentication (auto_error=False)."""
     app = FastAPI()
     security = HTTPBearer(auto_error=False)
@@ -80,7 +80,7 @@ async def test_bearer_auth_optional(make_event, lambda_context):
 
     # Without token
     event = make_event("GET", "/maybe-protected")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -88,7 +88,7 @@ async def test_bearer_auth_optional(make_event, lambda_context):
 
     # With token
     event = make_event("GET", "/maybe-protected", headers={"Authorization": "Bearer token123"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -97,7 +97,7 @@ async def test_bearer_auth_optional(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_user_context_from_token(make_event, lambda_context):
+async def test_user_context_from_token(make_event):
     """Test creating user context from Bearer token."""
     app = FastAPI()
     security = HTTPBearer()
@@ -113,7 +113,7 @@ async def test_user_context_from_token(make_event, lambda_context):
         return user
 
     event = make_event("GET", "/me", headers={"Authorization": "Bearer my_token"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -123,7 +123,7 @@ async def test_user_context_from_token(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_http_base_custom_scheme(make_event, lambda_context):
+async def test_http_base_custom_scheme(make_event):
     """Test HTTPBase with custom authentication scheme."""
     from fastapi_lambda.security import HTTPBase
 
@@ -135,7 +135,7 @@ async def test_http_base_custom_scheme(make_event, lambda_context):
         return {"scheme": credentials.scheme, "key": credentials.credentials}
 
     event = make_event("GET", "/api", headers={"Authorization": "ApiKey abc123xyz"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -144,7 +144,7 @@ async def test_http_base_custom_scheme(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_http_base_optional_auth(make_event, lambda_context):
+async def test_http_base_optional_auth(make_event):
     """Test HTTPBase with optional authentication."""
     from fastapi_lambda.security import HTTPBase
 
@@ -158,14 +158,14 @@ async def test_http_base_optional_auth(make_event, lambda_context):
         return {"protected": False, "public": "data"}
 
     event = make_event("GET", "/data")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
     assert body["protected"] is False
 
     event = make_event("GET", "/data", headers={"Authorization": "Token xyz789"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -174,7 +174,7 @@ async def test_http_base_optional_auth(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_bearer_optional_wrong_scheme(make_event, lambda_context):
+async def test_bearer_optional_wrong_scheme(make_event):
     """Test Bearer with auto_error=False and wrong scheme returns None."""
     app = FastAPI()
     security = HTTPBearer(auto_error=False)
@@ -184,7 +184,7 @@ async def test_bearer_optional_wrong_scheme(make_event, lambda_context):
         return {"has_auth": credentials is not None}
 
     event = make_event("GET", "/test", headers={"Authorization": "Basic user:pass"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -192,7 +192,7 @@ async def test_bearer_optional_wrong_scheme(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_http_base_missing_auth(make_event, lambda_context):
+async def test_http_base_missing_auth(make_event):
     """Test HTTPBase with missing authorization header raises 403."""
     from fastapi_lambda.security import HTTPBase
 
@@ -204,7 +204,7 @@ async def test_http_base_missing_auth(make_event, lambda_context):
         return {"ok": True}
 
     event = make_event("GET", "/protected")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 403

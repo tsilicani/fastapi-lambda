@@ -7,7 +7,7 @@ from fastapi_lambda.response import HTMLResponse, PlainTextResponse, RedirectRes
 
 
 @pytest.mark.asyncio
-async def test_json_response_unicode(make_event, lambda_context):
+async def test_json_response_unicode(make_event):
     """Test JSONResponse preserves Unicode."""
     app = FastAPI()
 
@@ -18,14 +18,14 @@ async def test_json_response_unicode(make_event, lambda_context):
         return JSONResponse({"msg": "Hello 世界 🚀"})
 
     event = make_event("GET", "/unicode")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert "世界" in response["body"]
     assert "🚀" in response["body"]
 
 
 @pytest.mark.asyncio
-async def test_html_response(make_event, lambda_context):
+async def test_html_response(make_event):
     """Test HTMLResponse with FastAPI."""
     app = FastAPI()
 
@@ -34,7 +34,7 @@ async def test_html_response(make_event, lambda_context):
         return HTMLResponse("<html><body>Test</body></html>")
 
     event = make_event("GET", "/page")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["statusCode"] == 200
     assert response["headers"]["Content-Type"] == "text/html"
@@ -42,7 +42,7 @@ async def test_html_response(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_plain_text_response(make_event, lambda_context):
+async def test_plain_text_response(make_event):
     """Test PlainTextResponse with FastAPI."""
     app = FastAPI()
 
@@ -51,7 +51,7 @@ async def test_plain_text_response(make_event, lambda_context):
         return PlainTextResponse("Plain text data")
 
     event = make_event("GET", "/text")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["statusCode"] == 200
     assert response["headers"]["Content-Type"] == "text/plain"
@@ -59,7 +59,7 @@ async def test_plain_text_response(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_redirect_response(make_event, lambda_context):
+async def test_redirect_response(make_event):
     """Test RedirectResponse with FastAPI."""
     app = FastAPI()
 
@@ -68,7 +68,7 @@ async def test_redirect_response(make_event, lambda_context):
         return RedirectResponse("/new", status_code=301)
 
     event = make_event("GET", "/old")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["statusCode"] == 301
     assert response["headers"]["Location"] == "/new"
@@ -76,7 +76,7 @@ async def test_redirect_response(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_redirect_with_custom_headers(make_event, lambda_context):
+async def test_redirect_with_custom_headers(make_event):
     """Test RedirectResponse with additional headers."""
     app = FastAPI()
 
@@ -85,7 +85,7 @@ async def test_redirect_with_custom_headers(make_event, lambda_context):
         return RedirectResponse("/target", headers={"X-Custom": "value"})
 
     event = make_event("GET", "/redirect")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["statusCode"] == 307
     assert response["headers"]["Location"] == "/target"
@@ -93,7 +93,7 @@ async def test_redirect_with_custom_headers(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_lambda_response_none_content(make_event, lambda_context):
+async def test_lambda_response_none_content(make_event):
     """Test LambdaResponse with None content."""
     from fastapi_lambda.response import LambdaResponse
 
@@ -104,14 +104,14 @@ async def test_lambda_response_none_content(make_event, lambda_context):
         return LambdaResponse(None, status_code=204)
 
     event = make_event("GET", "/empty")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["statusCode"] == 204
     assert response["body"] == ""
 
 
 @pytest.mark.asyncio
-async def test_lambda_response_bytes_content(make_event, lambda_context):
+async def test_lambda_response_bytes_content(make_event):
     """Test LambdaResponse with bytes content."""
     from fastapi_lambda.response import LambdaResponse
 
@@ -122,13 +122,13 @@ async def test_lambda_response_bytes_content(make_event, lambda_context):
         return LambdaResponse(b"Binary data")
 
     event = make_event("GET", "/bytes")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["body"] == "Binary data"
 
 
 @pytest.mark.asyncio
-async def test_lambda_response_int_content(make_event, lambda_context):
+async def test_lambda_response_int_content(make_event):
     """Test LambdaResponse with int content."""
     from fastapi_lambda.response import LambdaResponse
 
@@ -139,13 +139,13 @@ async def test_lambda_response_int_content(make_event, lambda_context):
         return LambdaResponse(12345)
 
     event = make_event("GET", "/number")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["body"] == "12345"
 
 
 @pytest.mark.asyncio
-async def test_response_media_type_sets_content_type(make_event, lambda_context):
+async def test_response_media_type_sets_content_type(make_event):
     """Test media_type parameter sets Content-Type header."""
     from fastapi_lambda.response import LambdaResponse
 
@@ -156,6 +156,6 @@ async def test_response_media_type_sets_content_type(make_event, lambda_context)
         return LambdaResponse("<xml/>", media_type="application/xml")
 
     event = make_event("GET", "/xml")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["headers"]["Content-Type"] == "application/xml"

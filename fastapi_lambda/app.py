@@ -125,7 +125,7 @@ class FastAPI:
     async def __call__(
         self,
         event: LambdaEvent,
-        context: Dict,
+        context: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         """
         Lambda handler entry point.
@@ -134,6 +134,8 @@ class FastAPI:
             def lambda_handler(event, context):
                 return asyncio.run(app(event, context))
         """
+        if context is None:
+            context = {}
         try:
             # Create request from Lambda event
             request = LambdaRequest(event)
@@ -217,7 +219,7 @@ def create_lambda_handler(app: FastAPI) -> Callable:
     """
     import asyncio
 
-    def lambda_handler(event: LambdaEvent, context: Any) -> Dict[str, Any]:
+    def lambda_handler(event: LambdaEvent, context: Optional[Any] = None) -> Dict[str, Any]:
         return asyncio.run(app(event, context))
 
     return lambda_handler

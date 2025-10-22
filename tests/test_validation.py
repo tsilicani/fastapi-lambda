@@ -22,7 +22,7 @@ class ItemResponse(BaseModel):
 
 
 @pytest.mark.asyncio
-async def test_request_body_validation(make_event, lambda_context):
+async def test_request_body_validation(make_event):
     """Test request body validation with Pydantic."""
     app = FastAPI()
 
@@ -32,7 +32,7 @@ async def test_request_body_validation(make_event, lambda_context):
 
     # Valid body
     event = make_event("POST", "/items", body={"name": "Widget", "price": 9.99})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -41,7 +41,7 @@ async def test_request_body_validation(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_validation_error_422(make_event, lambda_context):
+async def test_validation_error_422(make_event):
     """Test validation error returns 422."""
     app = FastAPI()
 
@@ -51,7 +51,7 @@ async def test_validation_error_422(make_event, lambda_context):
 
     # Invalid body (missing required fields)
     event = make_event("POST", "/items", body={"invalid": "data"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 422
@@ -59,7 +59,7 @@ async def test_validation_error_422(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_response_model_serialization(make_event, lambda_context):
+async def test_response_model_serialization(make_event):
     """Test response model serialization."""
     app = FastAPI()
 
@@ -74,7 +74,7 @@ async def test_response_model_serialization(make_event, lambda_context):
         }
 
     event = make_event("GET", "/items/1", path_params={"item_id": "1"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -86,7 +86,7 @@ async def test_response_model_serialization(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_optional_fields(make_event, lambda_context):
+async def test_optional_fields(make_event):
     """Test optional fields in Pydantic models."""
     app = FastAPI()
 
@@ -96,7 +96,7 @@ async def test_optional_fields(make_event, lambda_context):
 
     # Without optional field
     event = make_event("POST", "/items", body={"name": "Widget", "price": 9.99})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -108,7 +108,7 @@ async def test_optional_fields(make_event, lambda_context):
         "/items",
         body={"name": "Widget", "price": 9.99, "description": "A nice widget"},
     )
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -116,7 +116,7 @@ async def test_optional_fields(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_type_coercion(make_event, lambda_context):
+async def test_type_coercion(make_event):
     """Test Pydantic type coercion."""
     app = FastAPI()
 
@@ -125,7 +125,7 @@ async def test_type_coercion(make_event, lambda_context):
         return {"item_id": item_id, "type": type(item_id).__name__}
 
     event = make_event("GET", "/items/42", path_params={"item_id": "42"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -134,7 +134,7 @@ async def test_type_coercion(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_query_with_examples(make_event, lambda_context):
+async def test_query_with_examples(make_event):
     """Test Query parameter with examples."""
     from fastapi_lambda.param_functions import Query
 
@@ -145,7 +145,7 @@ async def test_query_with_examples(make_event, lambda_context):
         return {"query": q}
 
     event = make_event("GET", "/search", None, {"q": "hello"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -153,7 +153,7 @@ async def test_query_with_examples(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_body_with_examples(make_event, lambda_context):
+async def test_body_with_examples(make_event):
     """Test Body parameter with examples."""
     from fastapi_lambda.param_functions import Body
 
@@ -164,7 +164,7 @@ async def test_body_with_examples(make_event, lambda_context):
         return {"name": name}
 
     event = make_event("POST", "/items", "test_name")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200

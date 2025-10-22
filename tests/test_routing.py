@@ -7,7 +7,7 @@ from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
-async def test_get_route(make_event, lambda_context):
+async def test_get_route(make_event):
     """Test GET route."""
     app = FastAPI()
 
@@ -16,14 +16,14 @@ async def test_get_route(make_event, lambda_context):
         return {"message": "hello"}
 
     event = make_event("GET", "/")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
     assert body["message"] == "hello"
 
 
-def test_get_route_with_lambda_handler(make_event, lambda_context):
+def test_get_route_with_lambda_handler(make_event):
     """Test GET route using create_lambda_handler."""
     app = FastAPI()
 
@@ -33,7 +33,7 @@ def test_get_route_with_lambda_handler(make_event, lambda_context):
 
     handler = create_lambda_handler(app)
     event = make_event("GET", "/")
-    response = handler(event, lambda_context)
+    response = handler(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -41,7 +41,7 @@ def test_get_route_with_lambda_handler(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_post_route(make_event, lambda_context):
+async def test_post_route(make_event):
     """Test POST route."""
     app = FastAPI()
 
@@ -50,7 +50,7 @@ async def test_post_route(make_event, lambda_context):
         return {"created": True}
 
     event = make_event("POST", "/items")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -58,7 +58,7 @@ async def test_post_route(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_path_parameters(make_event, lambda_context):
+async def test_path_parameters(make_event):
     """Test path parameters."""
     app = FastAPI()
 
@@ -67,7 +67,7 @@ async def test_path_parameters(make_event, lambda_context):
         return {"item_id": item_id}
 
     event = make_event("GET", "/items/42", path_params={"item_id": "42"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -75,7 +75,7 @@ async def test_path_parameters(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_query_parameters(make_event, lambda_context):
+async def test_query_parameters(make_event):
     """Test query parameters."""
     app = FastAPI()
 
@@ -84,7 +84,7 @@ async def test_query_parameters(make_event, lambda_context):
         return {"query": q}
 
     event = make_event("GET", "/search", query={"q": "test"})
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -92,7 +92,7 @@ async def test_query_parameters(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_multiple_methods(make_event, lambda_context):
+async def test_multiple_methods(make_event):
     """Test multiple HTTP methods on same path."""
     app = FastAPI()
 
@@ -119,14 +119,14 @@ async def test_multiple_methods(make_event, lambda_context):
     # Test each method
     for method in ["GET", "POST", "PUT", "DELETE", "PATCH"]:
         event = make_event(method, "/resource")
-        response = await app(event, lambda_context)
+        response = await app(event)
         status, body = parse_response(response)
         assert status == 200
         assert body["method"] == method
 
 
 @pytest.mark.asyncio
-async def test_404_not_found(make_event, lambda_context):
+async def test_404_not_found(make_event):
     """Test 404 for non-existent route."""
     app = FastAPI()
 
@@ -135,13 +135,13 @@ async def test_404_not_found(make_event, lambda_context):
         return {"ok": True}
 
     event = make_event("GET", "/does-not-exist")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["statusCode"] == 404
 
 
 @pytest.mark.asyncio
-async def test_sync_endpoint(make_event, lambda_context):
+async def test_sync_endpoint(make_event):
     """Test synchronous endpoint (non-async def)."""
     app = FastAPI()
 
@@ -150,7 +150,7 @@ async def test_sync_endpoint(make_event, lambda_context):
         return {"type": "sync"}
 
     event = make_event("GET", "/sync")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -158,7 +158,7 @@ async def test_sync_endpoint(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_mixed_sync_async_endpoints(make_event, lambda_context):
+async def test_mixed_sync_async_endpoints(make_event):
     """Test mix of sync and async endpoints."""
     app = FastAPI()
 
@@ -172,21 +172,21 @@ async def test_mixed_sync_async_endpoints(make_event, lambda_context):
 
     # Test sync endpoint
     event = make_event("GET", "/sync")
-    response = await app(event, lambda_context)
+    response = await app(event)
     status, body = parse_response(response)
     assert status == 200
     assert body["type"] == "sync"
 
     # Test async endpoint
     event = make_event("GET", "/async")
-    response = await app(event, lambda_context)
+    response = await app(event)
     status, body = parse_response(response)
     assert status == 200
     assert body["type"] == "async"
 
 
 @pytest.mark.asyncio
-async def test_path_convertor_types(make_event, lambda_context):
+async def test_path_convertor_types(make_event):
     """Test different path parameter types (str, int, path)."""
     app = FastAPI()
 
@@ -200,14 +200,14 @@ async def test_path_convertor_types(make_event, lambda_context):
 
     # Test int convertor
     event = make_event("GET", "/items/123")
-    response = await app(event, lambda_context)
+    response = await app(event)
     status, body = parse_response(response)
     assert status == 200
     assert body["item_id"] == 123
 
     # Test path convertor (matches everything including slashes)
     event = make_event("GET", "/files/folder/subfolder/file.txt")
-    response = await app(event, lambda_context)
+    response = await app(event)
     status, body = parse_response(response)
     assert status == 200
     assert body["path"] == "folder/subfolder/file.txt"
@@ -225,7 +225,7 @@ async def test_invalid_convertor_type():
 
 
 @pytest.mark.asyncio
-async def test_post_with_invalid_json(make_event, lambda_context):
+async def test_post_with_invalid_json(make_event):
     """Test POST with non-JSON body (should not crash)."""
     app = FastAPI()
 
@@ -236,7 +236,7 @@ async def test_post_with_invalid_json(make_event, lambda_context):
     # Send invalid JSON
     event = make_event("POST", "/items")
     event["body"] = "not-valid-json{"
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     # Should still succeed (body parsing error is caught)
     status, body = parse_response(response)
@@ -245,7 +245,7 @@ async def test_post_with_invalid_json(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_response_model(make_event, lambda_context):
+async def test_response_model(make_event):
     """Test response_model validation and serialization."""
     from pydantic import BaseModel
 
@@ -261,7 +261,7 @@ async def test_response_model(make_event, lambda_context):
         return {"name": "Widget", "price": 9.99, "internal_id": 12345}
 
     event = make_event("GET", "/items/1")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -270,7 +270,7 @@ async def test_response_model(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_return_lambda_response_directly(make_event, lambda_context):
+async def test_return_lambda_response_directly(make_event):
     """Test returning LambdaResponse directly from endpoint."""
     from fastapi_lambda.response import LambdaResponse
 
@@ -281,7 +281,7 @@ async def test_return_lambda_response_directly(make_event, lambda_context):
         return LambdaResponse(content="custom content", status_code=201, headers={"X-Custom": "header"})
 
     event = make_event("GET", "/custom")
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     assert response["statusCode"] == 201
     assert response["headers"]["X-Custom"] == "header"
