@@ -31,7 +31,6 @@ class ExceptionMiddleware:
         self,
         app: Callable[[LambdaRequest], Awaitable[LambdaResponse]],
         handlers: Optional[Dict[Type[Exception], Callable]] = None,
-        debug: bool = False,
     ):
         """
         Initialize ExceptionMiddleware.
@@ -39,10 +38,8 @@ class ExceptionMiddleware:
         Args:
             app: Next middleware/router in chain
             handlers: Optional custom exception handlers
-            debug: Debug mode flag (currently unused, for future extension)
         """
         self.app = app
-        self.debug = debug
         self._exception_handlers: Dict[Type[Exception], Callable] = {
             HTTPException: self._http_exception_handler,
             RequestValidationError: self._validation_exception_handler,

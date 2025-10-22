@@ -172,7 +172,7 @@ class FastAPI:
         middleware = (
             self.user_middleware  # List of Middleware objects (outermost)
             + [Middleware(ServerErrorMiddleware, handler=error_handler, debug=self.debug)]
-            + [Middleware(ExceptionMiddleware, handlers=exception_handlers, debug=self.debug)]
+            + [Middleware(ExceptionMiddleware, handlers=exception_handlers)]
         )
 
         # Start with router as innermost layer
