@@ -2,9 +2,9 @@
 
 import pytest
 
-from fastapi_lambda import FastAPI
+from fastapi_lambda import FastAPI, JSONResponse
+from fastapi_lambda.response import HTMLResponse, LambdaResponse, PlainTextResponse, RedirectResponse
 from tests.utils import make_event
-from fastapi_lambda.response import HTMLResponse, PlainTextResponse, RedirectResponse
 
 
 @pytest.mark.asyncio
@@ -14,8 +14,6 @@ async def test_json_response_unicode():
 
     @app.get("/unicode")
     async def get_unicode():
-        from fastapi_lambda import JSONResponse
-
         return JSONResponse({"msg": "Hello 世界 🚀"})
 
     event = make_event("GET", "/unicode")
@@ -96,7 +94,6 @@ async def test_redirect_with_custom_headers():
 @pytest.mark.asyncio
 async def test_lambda_response_none_content():
     """Test LambdaResponse with None content."""
-    from fastapi_lambda.response import LambdaResponse
 
     app = FastAPI()
 
@@ -114,7 +111,6 @@ async def test_lambda_response_none_content():
 @pytest.mark.asyncio
 async def test_lambda_response_bytes_content():
     """Test LambdaResponse with bytes content."""
-    from fastapi_lambda.response import LambdaResponse
 
     app = FastAPI()
 
@@ -131,7 +127,6 @@ async def test_lambda_response_bytes_content():
 @pytest.mark.asyncio
 async def test_lambda_response_int_content():
     """Test LambdaResponse with int content."""
-    from fastapi_lambda.response import LambdaResponse
 
     app = FastAPI()
 
@@ -148,7 +143,6 @@ async def test_lambda_response_int_content():
 @pytest.mark.asyncio
 async def test_response_media_type_sets_content_type():
     """Test media_type parameter sets Content-Type header."""
-    from fastapi_lambda.response import LambdaResponse
 
     app = FastAPI()
 

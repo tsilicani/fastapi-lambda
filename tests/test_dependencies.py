@@ -3,11 +3,14 @@
 from typing import Annotated
 
 import pytest
+from pydantic import BaseModel
 
 from fastapi_lambda.app import FastAPI
-from tests.utils import make_event
+from fastapi_lambda.param_functions import Header
 from fastapi_lambda.params import Depends
+from fastapi_lambda.requests import LambdaRequest
 from tests.conftest import parse_response
+from tests.utils import make_event
 
 
 @pytest.mark.asyncio
@@ -84,7 +87,6 @@ async def test_nested_dependencies():
 async def test_request_dependency():
     """Test injecting Request object."""
     app = FastAPI()
-    from fastapi_lambda.requests import LambdaRequest
 
     @app.get("/info", response_model=None)  # Disable response_model validation for Request
     async def info(request: LambdaRequest):
@@ -176,7 +178,6 @@ async def test_sync_generator_dependency_raises_error():
 @pytest.mark.asyncio
 async def test_dependency_with_request_injection():
     """Test dependency with LambdaRequest auto-injection."""
-    from fastapi_lambda.requests import LambdaRequest
 
     app = FastAPI()
 
@@ -198,7 +199,6 @@ async def test_dependency_with_request_injection():
 @pytest.mark.asyncio
 async def test_query_and_body_params():
     """Test query and body parameter extraction."""
-    from pydantic import BaseModel
 
     app = FastAPI()
 
@@ -293,7 +293,6 @@ async def test_path_param_with_annotation():
 @pytest.mark.asyncio
 async def test_header_params():
     """Test header parameter extraction."""
-    from fastapi_lambda.param_functions import Header
 
     app = FastAPI()
 

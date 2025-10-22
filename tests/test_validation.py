@@ -6,8 +6,10 @@ import pytest
 from pydantic import BaseModel
 
 from fastapi_lambda.app import FastAPI
-from tests.utils import make_event
+from fastapi_lambda.param_functions import Body, Query
+from fastapi_lambda.params import Depends
 from tests.conftest import parse_response
+from tests.utils import make_event
 
 
 class Item(BaseModel):
@@ -137,7 +139,6 @@ async def test_type_coercion():
 @pytest.mark.asyncio
 async def test_query_with_examples():
     """Test Query parameter with examples."""
-    from fastapi_lambda.param_functions import Query
 
     app = FastAPI()
 
@@ -156,7 +157,6 @@ async def test_query_with_examples():
 @pytest.mark.asyncio
 async def test_body_with_examples():
     """Test Body parameter with examples."""
-    from fastapi_lambda.param_functions import Body
 
     app = FastAPI()
 
@@ -175,7 +175,6 @@ async def test_body_with_examples():
 @pytest.mark.asyncio
 async def test_depends_repr():
     """Test Depends __repr__ for coverage."""
-    from fastapi_lambda.params import Depends
 
     async def my_dep():
         return 42

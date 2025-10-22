@@ -1,10 +1,17 @@
 """Test routing functionality."""
 
 import pytest
+from pydantic import BaseModel
+
+from typing import cast
 
 from fastapi_lambda.app import FastAPI, create_lambda_handler
-from tests.utils import make_event
+from fastapi_lambda.exceptions import FastAPIError
+from fastapi_lambda.response import LambdaResponse
+from fastapi_lambda.router import Convertor
+from fastapi_lambda.types import HttpMethod
 from tests.conftest import parse_response
+from tests.utils import make_event
 
 
 @pytest.mark.asyncio
@@ -119,7 +126,7 @@ async def test_multiple_methods():
 
     # Test each method
     for method in ["GET", "POST", "PUT", "DELETE", "PATCH"]:
-        event = make_event(method, "/resource")
+        event = make_event(cast(HttpMethod, method), "/resource")
         response = await app(event)
         status, body = parse_response(response)
         assert status == 200
@@ -248,7 +255,6 @@ async def test_post_with_invalid_json():
 @pytest.mark.asyncio
 async def test_response_model():
     """Test response_model validation and serialization."""
-    from pydantic import BaseModel
 
     app = FastAPI()
 
@@ -273,7 +279,6 @@ async def test_response_model():
 @pytest.mark.asyncio
 async def test_return_lambda_response_directly():
     """Test returning LambdaResponse directly from endpoint."""
-    from fastapi_lambda.response import LambdaResponse
 
     app = FastAPI()
 
@@ -291,7 +296,6 @@ async def test_return_lambda_response_directly():
 
 def test_base_convertor_not_implemented():
     """Test that base Convertor.convert() raises NotImplementedError."""
-    from fastapi_lambda.router import Convertor
 
     convertor = Convertor()
     with pytest.raises(NotImplementedError):
@@ -300,8 +304,6 @@ def test_base_convertor_not_implemented():
 
 def test_invalid_response_model():
     """Test that invalid response_model raises FastAPIError at route creation."""
-    from fastapi_lambda.exceptions import FastAPIError
-    from fastapi_lambda.response import LambdaResponse
 
     app = FastAPI()
 

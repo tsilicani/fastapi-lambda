@@ -5,10 +5,10 @@ from typing import Annotated, Optional
 import pytest
 
 from fastapi_lambda.app import FastAPI
-from tests.utils import make_event
 from fastapi_lambda.params import Depends
-from fastapi_lambda.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi_lambda.security import HTTPAuthorizationCredentials, HTTPBase, HTTPBearer
 from tests.conftest import parse_response
+from tests.utils import make_event
 
 
 @pytest.mark.asyncio
@@ -126,8 +126,6 @@ async def test_user_context_from_token():
 @pytest.mark.asyncio
 async def test_http_base_custom_scheme():
     """Test HTTPBase with custom authentication scheme."""
-    from fastapi_lambda.security import HTTPBase
-
     app = FastAPI()
     security = HTTPBase(scheme="ApiKey", description="Custom API Key auth")
 
@@ -147,8 +145,6 @@ async def test_http_base_custom_scheme():
 @pytest.mark.asyncio
 async def test_http_base_optional_auth():
     """Test HTTPBase with optional authentication."""
-    from fastapi_lambda.security import HTTPBase
-
     app = FastAPI()
     security = HTTPBase(scheme="Token", auto_error=False)
 
@@ -195,8 +191,6 @@ async def test_bearer_optional_wrong_scheme():
 @pytest.mark.asyncio
 async def test_http_base_missing_auth():
     """Test HTTPBase with missing authorization header raises 403."""
-    from fastapi_lambda.security import HTTPBase
-
     app = FastAPI()
     security = HTTPBase(scheme="Custom")
 

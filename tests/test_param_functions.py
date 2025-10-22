@@ -2,15 +2,14 @@
 import pytest
 
 from fastapi_lambda.app import FastAPI
-from tests.utils import make_event
+from fastapi_lambda.param_functions import Header, Path, Security
 from tests.conftest import parse_response
+from tests.utils import make_event
 
 
 @pytest.mark.asyncio
 async def test_path_function():
     """Test Path() wrapper function."""
-    from fastapi_lambda.param_functions import Path
-
     app = FastAPI()
 
     @app.get("/items/{item_id}")
@@ -28,8 +27,6 @@ async def test_path_function():
 @pytest.mark.asyncio
 async def test_header_function():
     """Test Header() wrapper function."""
-    from fastapi_lambda.param_functions import Header
-
     app = FastAPI()
 
     @app.get("/protected")
@@ -47,8 +44,6 @@ async def test_header_function():
 @pytest.mark.asyncio
 async def test_security_function():
     """Test Security() wrapper function."""
-    from fastapi_lambda.param_functions import Security
-
     app = FastAPI()
 
     async def get_current_user():

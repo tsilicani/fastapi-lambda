@@ -118,12 +118,13 @@ async def test_json_caching():
 
 def test_client_tuple_unpacking():
     """Test client can be unpacked as tuple (Starlette compatibility)."""
-    req = LambdaRequest(make_event(source_ip="192.168.1.1"))
+    test_ip = "192.168.1.1"
+    req = LambdaRequest(make_event(source_ip=test_ip))
 
     # Test tuple unpacking
     host, port = req.client
-    assert host == "192.168.1.1"
+    assert host == test_ip
     assert port == 0
 
     # Test repr
-    assert "192.168.1.1" in repr(req.client)
+    assert test_ip in repr(req.client)

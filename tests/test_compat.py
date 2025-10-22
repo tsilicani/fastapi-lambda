@@ -2,12 +2,16 @@
 Tests for _compat module functions
 """
 
+from typing import List, Union
+
 import pytest
 from pydantic import Field
 from typing_extensions import Annotated
 
 from fastapi_lambda._compat import copy_field_info, get_missing_field_error
-from fastapi_lambda.params import Query
+from fastapi_lambda.app import FastAPI
+from fastapi_lambda.params import Body, Query
+from tests.conftest import parse_response
 from tests.utils import make_event
 
 
@@ -163,7 +167,6 @@ class TestModelFieldGetDefault:
         Real scenario: when query param is missing, get_default() is called
         at dependencies.py:557 to get the default value.
         """
-        from fastapi_lambda.app import FastAPI
 
         app = FastAPI()
 
@@ -174,8 +177,6 @@ class TestModelFieldGetDefault:
         # Request without query params - should use defaults
         event = make_event("GET", "/search")
         response = await app(event)
-
-        from tests.conftest import parse_response
 
         status, body = parse_response(response)
         assert status == 200
@@ -189,10 +190,6 @@ class TestModelFieldGetDefault:
         Real scenario: POST endpoint with optional body that has default_factory.
         When body is None, get_default() calls the factory at dependencies.py:557.
         """
-        from typing import List
-
-        from fastapi_lambda.app import FastAPI
-        from fastapi_lambda.params import Body
 
         app = FastAPI()
 
@@ -203,8 +200,6 @@ class TestModelFieldGetDefault:
         # POST without body - should call default_factory
         event = make_event("POST", "/items", body=None)
         response = await app(event)
-
-        from tests.conftest import parse_response
 
         status, body = parse_response(response)
         assert status == 200
@@ -225,9 +220,6 @@ class TestFieldAnnotationIsComplex:
         2. Union detection triggers recursive call with each arg (line 162)
         3. One arg is Annotated[int, ...] which unwraps at line 165 ✓
         """
-        from typing import Union
-
-        from fastapi_lambda.app import FastAPI
 
         app = FastAPI()
 

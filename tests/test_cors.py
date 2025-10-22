@@ -4,9 +4,10 @@ Tests for CORS middleware.
 
 import pytest
 
-from fastapi_lambda import FastAPI
+from fastapi_lambda import FastAPI, HTTPException
 from fastapi_lambda.middleware.cors import CORSMiddleware
-from fastapi_lambda.types import LambdaEvent
+from fastapi_lambda.response import JSONResponse
+from tests.utils import make_event
 
 
 @pytest.fixture
@@ -51,28 +52,7 @@ def app_with_cors_wildcard():
 @pytest.mark.asyncio
 async def test_cors_simple_request_allowed_origin(app_with_cors):
     """Test CORS headers on simple request with allowed origin."""
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/test",
-        "headers": {
-            "origin": "https://example.com",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/test", headers={"origin": "https://example.com"})
     response = await app_with_cors(event, {})
 
     assert response["statusCode"] == 200
@@ -85,28 +65,7 @@ async def test_cors_simple_request_allowed_origin(app_with_cors):
 @pytest.mark.asyncio
 async def test_cors_simple_request_disallowed_origin(app_with_cors):
     """Test CORS headers on simple request with disallowed origin."""
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/test",
-        "headers": {
-            "origin": "https://evil.com",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/test", headers={"origin": "https://evil.com"})
     response = await app_with_cors(event, {})
 
     # Request succeeds but no CORS headers added for disallowed origin
@@ -121,30 +80,15 @@ async def test_cors_simple_request_disallowed_origin(app_with_cors):
 @pytest.mark.asyncio
 async def test_cors_preflight_allowed(app_with_cors):
     """Test CORS preflight request with allowed origin and method."""
-    event: LambdaEvent = {
-        "httpMethod": "OPTIONS",
-        "path": "/test",
-        "headers": {
+    event = make_event(
+        "OPTIONS",
+        "/test",
+        headers={
             "origin": "https://example.com",
             "access-control-request-method": "POST",
             "access-control-request-headers": "X-Custom-Header",
         },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    )
     response = await app_with_cors(event, {})
 
     assert response["statusCode"] == 200
@@ -159,29 +103,11 @@ async def test_cors_preflight_allowed(app_with_cors):
 @pytest.mark.asyncio
 async def test_cors_preflight_disallowed_origin(app_with_cors):
     """Test CORS preflight request with disallowed origin."""
-    event: LambdaEvent = {
-        "httpMethod": "OPTIONS",
-        "path": "/test",
-        "headers": {
-            "origin": "https://evil.com",
-            "access-control-request-method": "GET",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event(
+        "OPTIONS",
+        "/test",
+        headers={"origin": "https://evil.com", "access-control-request-method": "GET"},
+    )
     response = await app_with_cors(event, {})
 
     assert response["statusCode"] == 400
@@ -191,29 +117,11 @@ async def test_cors_preflight_disallowed_origin(app_with_cors):
 @pytest.mark.asyncio
 async def test_cors_preflight_disallowed_method(app_with_cors):
     """Test CORS preflight request with disallowed method."""
-    event: LambdaEvent = {
-        "httpMethod": "OPTIONS",
-        "path": "/test",
-        "headers": {
-            "origin": "https://example.com",
-            "access-control-request-method": "DELETE",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event(
+        "OPTIONS",
+        "/test",
+        headers={"origin": "https://example.com", "access-control-request-method": "DELETE"},
+    )
     response = await app_with_cors(event, {})
 
     assert response["statusCode"] == 400
@@ -223,30 +131,15 @@ async def test_cors_preflight_disallowed_method(app_with_cors):
 @pytest.mark.asyncio
 async def test_cors_preflight_disallowed_header(app_with_cors):
     """Test CORS preflight request with disallowed header."""
-    event: LambdaEvent = {
-        "httpMethod": "OPTIONS",
-        "path": "/test",
-        "headers": {
+    event = make_event(
+        "OPTIONS",
+        "/test",
+        headers={
             "origin": "https://example.com",
             "access-control-request-method": "GET",
             "access-control-request-headers": "X-Evil-Header",
         },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    )
     response = await app_with_cors(event, {})
 
     assert response["statusCode"] == 400
@@ -256,28 +149,7 @@ async def test_cors_preflight_disallowed_header(app_with_cors):
 @pytest.mark.asyncio
 async def test_cors_wildcard_origin(app_with_cors_wildcard):
     """Test CORS with wildcard origin."""
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/test",
-        "headers": {
-            "origin": "https://any-origin.com",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/test", headers={"origin": "https://any-origin.com"})
     response = await app_with_cors_wildcard(event, {})
 
     assert response["statusCode"] == 200
@@ -287,29 +159,7 @@ async def test_cors_wildcard_origin(app_with_cors_wildcard):
 @pytest.mark.asyncio
 async def test_cors_wildcard_with_cookies(app_with_cors_wildcard):
     """Test CORS wildcard with cookies - should return specific origin."""
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/test",
-        "headers": {
-            "origin": "https://example.com",
-            "cookie": "session=abc123",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/test", headers={"origin": "https://example.com", "cookie": "session=abc123"})
     response = await app_with_cors_wildcard(event, {})
 
     assert response["statusCode"] == 200
@@ -321,26 +171,7 @@ async def test_cors_wildcard_with_cookies(app_with_cors_wildcard):
 @pytest.mark.asyncio
 async def test_cors_no_origin_header(app_with_cors):
     """Test request without origin header - no CORS processing."""
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/test",
-        "headers": {},
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/test")
     response = await app_with_cors(event, {})
 
     assert response["statusCode"] == 200
@@ -362,28 +193,7 @@ async def test_cors_regex_origin():
     async def test_endpoint():
         return {"message": "test"}
 
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/test",
-        "headers": {
-            "origin": "https://subdomain.example.com",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/test", headers={"origin": "https://subdomain.example.com"})
     response = await app(event, {})
 
     assert response["statusCode"] == 200
@@ -405,28 +215,7 @@ async def test_cors_on_unhandled_exception():
     def crash_endpoint():
         raise Exception("Unhandled exception!")
 
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/crash",
-        "headers": {
-            "origin": "https://example.com",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/crash", headers={"origin": "https://example.com"})
     response = await app(event, {})
 
     # Should return 500
@@ -453,28 +242,7 @@ async def test_cors_on_unhandled_exception_production():
     def crash_endpoint():
         raise Exception("Unhandled exception!")
 
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/crash",
-        "headers": {
-            "origin": "https://example.com",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/crash", headers={"origin": "https://example.com"})
     response = await app(event, {})
 
     # Should return 500
@@ -488,7 +256,6 @@ async def test_cors_on_unhandled_exception_production():
 @pytest.mark.asyncio
 async def test_cors_on_http_exception():
     """Test that CORS headers are present on HTTPException (404)."""
-    from fastapi_lambda import HTTPException
 
     app = FastAPI()
     app.add_middleware(
@@ -502,28 +269,7 @@ async def test_cors_on_http_exception():
     def not_found_endpoint():
         raise HTTPException(status_code=404, detail="Not found")
 
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/not-found",
-        "headers": {
-            "origin": "https://example.com",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/not-found", headers={"origin": "https://example.com"})
     response = await app(event, {})
 
     # Should return 404
@@ -549,30 +295,15 @@ async def test_cors_preflight_wildcard_headers():
     async def test_endpoint():
         return {"message": "test"}
 
-    event: LambdaEvent = {
-        "httpMethod": "OPTIONS",
-        "path": "/test",
-        "headers": {
+    event = make_event(
+        "OPTIONS",
+        "/test",
+        headers={
             "origin": "https://example.com",
             "access-control-request-method": "POST",
             "access-control-request-headers": "X-Custom-1, X-Custom-2",
         },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    )
     response = await app(event, {})
 
     assert response["statusCode"] == 200
@@ -583,7 +314,6 @@ async def test_cors_preflight_wildcard_headers():
 @pytest.mark.asyncio
 async def test_cors_vary_header_append():
     """Test that Vary header is appended correctly when already present."""
-    from fastapi_lambda.response import JSONResponse
 
     app = FastAPI()
     app.add_middleware(
@@ -598,28 +328,7 @@ async def test_cors_vary_header_append():
         # Return response with existing Vary header
         return JSONResponse({"message": "test"}, headers={"Vary": "Accept-Encoding"})
 
-    event: LambdaEvent = {
-        "httpMethod": "GET",
-        "path": "/test",
-        "headers": {
-            "origin": "https://example.com",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event("GET", "/test", headers={"origin": "https://example.com"})
     response = await app(event, {})
 
     assert response["statusCode"] == 200
@@ -644,29 +353,11 @@ async def test_cors_preflight_wildcard_with_credentials():
     async def test_endpoint():
         return {"message": "test"}
 
-    event: LambdaEvent = {
-        "httpMethod": "OPTIONS",
-        "path": "/test",
-        "headers": {
-            "origin": "https://any-origin.com",
-            "access-control-request-method": "POST",
-        },
-        "queryStringParameters": None,
-        "pathParameters": None,
-        "body": None,
-        "isBase64Encoded": False,
-        "requestContext": {
-            "requestId": "test-123",
-            "accountId": "123456789012",
-            "stage": "prod",
-            "requestTime": "09/Apr/2015:12:34:56 +0000",
-            "requestTimeEpoch": 1428582896000,
-            "identity": {},
-            "domainName": "example.execute-api.us-east-1.amazonaws.com",
-            "apiId": "abc123",
-        },
-    }
-
+    event = make_event(
+        "OPTIONS",
+        "/test",
+        headers={"origin": "https://any-origin.com", "access-control-request-method": "POST"},
+    )
     response = await app(event, {})
 
     assert response["statusCode"] == 200

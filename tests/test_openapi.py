@@ -5,6 +5,7 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel
 
+from fastapi_lambda import Body, Query
 from fastapi_lambda.app import FastAPI
 from tests.utils import make_event
 
@@ -122,6 +123,7 @@ def test_openapi_model_description_truncation():
         This detailed explanation is only for code documentation tools
         like Sphinx or IDEs, and won't appear in OpenAPI schema.
         """
+
         value: str
 
     @app.get("/detailed", response_model=DetailedModel)
@@ -219,8 +221,6 @@ def test_openapi_examples_with_complex_types():
     from enum import Enum
     from uuid import UUID
 
-    from fastapi_lambda import Body, Query
-
     class Status(Enum):
         ACTIVE = "active"
 
@@ -265,8 +265,6 @@ def test_openapi_examples_all_types():
     from decimal import Decimal
     from enum import Enum
     from pathlib import Path
-
-    from fastapi_lambda import Body
 
     class Priority(Enum):
         HIGH = "high"
@@ -315,8 +313,6 @@ def test_openapi_examples_edge_cases():
     """Test _jsonable_encoder edge cases for 100% coverage."""
     from datetime import time
     from uuid import UUID
-
-    from fastapi_lambda import Body
 
     class TestProduct(BaseModel):
         id: UUID
