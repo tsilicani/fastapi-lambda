@@ -6,11 +6,14 @@ Replaces fastapi.applications.FastAPI which is ASGI-based.
 Original FastAPI implementation: https://github.com/fastapi/fastapi/blob/master/fastapi/applications.py
 """
 
-import traceback
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Type
 
+from fastapi_lambda.middleware.base import Middleware
+from fastapi_lambda.middleware.errors import ServerErrorMiddleware
+from fastapi_lambda.middleware.exceptions import ExceptionMiddleware
 from fastapi_lambda.openapi_schema import get_openapi_schema
 from fastapi_lambda.requests import LambdaRequest
+from fastapi_lambda.response import LambdaResponse
 from fastapi_lambda.router import LambdaRouter
 from fastapi_lambda.types import LambdaEvent
 
@@ -32,6 +35,7 @@ class FastAPI:
         docs_url: Optional[str] = None,
         tags: Optional[List[Dict[str, Any]]] = None,
         servers: Optional[List[Dict[str, str]]] = None,
+        exception_handlers: Optional[Dict[Any, Callable]] = None,
     ):
         self.title = title
         self.version = version
@@ -43,7 +47,15 @@ class FastAPI:
         self.servers = servers
         self.router = LambdaRouter()
         self._openapi_schema: Optional[Dict[str, Any]] = None
-        self._middleware: List[Any] = []
+
+        # Exception handlers (FastAPI pattern)
+        self.exception_handlers: Dict[Any, Callable] = {}
+        if exception_handlers:
+            self.exception_handlers.update(exception_handlers)
+
+        # Middleware stack (lazy-built on first request)
+        self.user_middleware: List[Middleware] = []
+        self._middleware_stack: Optional[Callable[[LambdaRequest], Awaitable[LambdaResponse]]] = None
 
         # Register OpenAPI endpoint if enabled
         if self.openapi_url:
@@ -52,6 +64,9 @@ class FastAPI:
     def add_middleware(self, middleware_class: Type, **options: Any) -> None:
         """
         Add middleware to the application.
+
+        Middleware are lazy-instantiated and wrapped in reverse order (LIFO).
+        Last added middleware is outermost (executes first).
 
         Example:
             from fastapi_lambda.middleware.cors import CORSMiddleware
@@ -63,7 +78,11 @@ class FastAPI:
                 allow_headers=["*"],
             )
         """
-        self._middleware.append(middleware_class(**options))
+        # Store as Middleware object for lazy instantiation
+        self.user_middleware.append(Middleware(middleware_class, **options))
+
+        # Invalidate cached stack (will rebuild on next request)
+        self._middleware_stack = None
 
     def get(self, path: str, **kwargs: Any) -> Callable:
         """Register GET endpoint."""
@@ -122,6 +141,53 @@ class FastAPI:
             include_in_schema=False,
         )
 
+    def build_middleware_stack(self) -> Callable[[LambdaRequest], Awaitable[LambdaResponse]]:
+        """
+        Build middleware stack matching FastAPI/Starlette pattern.
+
+        Stack order:
+        User Middleware (CORS, logging, auth, etc.)
+          → ServerErrorMiddleware (catches 500)
+            → ExceptionMiddleware (innermost - handles HTTPException)
+              → Router
+
+        Note: User middleware is outermost to ensure CORS headers are added
+        even on 500 errors. ServerError catches exceptions and returns response,
+        which then flows back through user middleware post-processing.
+
+        Inspired by: fastapi.applications.FastAPI.build_middleware_stack()
+        """
+
+        # Separate error handler (500/Exception) from exception handlers
+        error_handler = None
+        exception_handlers: Dict[Any, Callable] = {}
+
+        for key, value in self.exception_handlers.items():
+            if key in (500, Exception):
+                error_handler = value
+            else:
+                exception_handlers[key] = value
+
+        # Build middleware list: user + system + system (FastAPI pattern)
+        middleware = (
+            self.user_middleware  # List of Middleware objects (outermost)
+            + [Middleware(ServerErrorMiddleware, handler=error_handler, debug=self.debug)]
+            + [Middleware(ExceptionMiddleware, handlers=exception_handlers, debug=self.debug)]
+        )
+
+        # Start with router as innermost layer
+        async def router_handler(request: LambdaRequest) -> LambdaResponse:
+            return await self.router.route(request)
+
+        app: Callable[[LambdaRequest], Awaitable[LambdaResponse]] = router_handler
+
+        # Wrap with middleware stack (reverse order - LIFO)
+        # FastAPI pattern: for cls, args, kwargs in reversed(middleware)
+        for cls, args, kwargs in reversed(middleware):
+            app = cls(app, *args, **kwargs)  # type: ignore[misc, call-arg]
+
+        return app
+
     async def __call__(
         self,
         event: LambdaEvent,
@@ -133,70 +199,24 @@ class FastAPI:
         This is what gets called directly by AWS Lambda:
             def lambda_handler(event, context):
                 return asyncio.run(app(event, context))
+
+        Note: Exception handling is done INSIDE the middleware stack:
+        - ServerErrorMiddleware (outermost) catches unhandled exceptions
+        - ExceptionMiddleware (innermost) handles HTTPException
+        - User middleware can log/trace all requests (success + failure)
         """
         if context is None:
             context = {}
-        try:
-            # Create request from Lambda event
-            request = LambdaRequest(event)
 
-            # Route and execute
-            response = await self.router.route(request)
+        # Lazy build middleware stack on first request
+        if self._middleware_stack is None:
+            self._middleware_stack = self.build_middleware_stack()
 
-            # Apply middleware (in reverse order, last added first)
-            for middleware in reversed(self._middleware):
-                if hasattr(middleware, "process_request"):
-                    response = middleware.process_request(request, response)
+        # Create request from Lambda event
+        request = LambdaRequest(event)
 
-            # Convert to Lambda response format
-            return response.to_lambda_response()  # type: ignore[return-value]
-
-        except Exception as exc:
-            # Handle errors (with middleware support)
-            request = LambdaRequest(event)
-            return self._error_response(exc, request)
-
-    def _error_response(self, exc: Exception, request: LambdaRequest) -> Dict[str, Any]:
-        """Generate error response for Lambda."""
-        from fastapi_lambda.exceptions import HTTPException, RequestValidationError
-        from fastapi_lambda.response import JSONResponse
-
-        # Handle validation errors (422)
-        if isinstance(exc, RequestValidationError):
-            response = JSONResponse(
-                content={"detail": exc.errors()},
-                status_code=422,
-            )
-
-        # Handle HTTP exceptions (custom status codes)
-        elif isinstance(exc, HTTPException):
-            response = JSONResponse(
-                content={"detail": exc.detail},
-                status_code=exc.status_code,
-            )
-
-        # Handle generic exceptions (500)
-        elif self.debug:
-            # Debug mode: return detailed error with traceback
-            response = JSONResponse(
-                content={
-                    "detail": str(exc),
-                    "type": type(exc).__name__,
-                    "traceback": traceback.format_exc().split("\n"),
-                },
-                status_code=500,
-            )
-        else:
-            # Production: return generic error
-            response = JSONResponse(
-                content={"detail": "Internal Server Error"},
-                status_code=500,
-            )
-
-        # Apply middleware (in reverse order, last added first)
-        for middleware in reversed(self._middleware):
-            if hasattr(middleware, "process_request"):
-                response = middleware.process_request(request, response)
+        # Execute middleware chain (includes exception handling)
+        response = await self._middleware_stack(request)
 
         # Convert to Lambda response format
         return response.to_lambda_response()  # type: ignore[return-value]

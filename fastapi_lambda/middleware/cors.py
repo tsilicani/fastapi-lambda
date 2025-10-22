@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from typing import Awaitable, Callable
 
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import LambdaResponse, PlainTextResponse
@@ -35,6 +36,7 @@ class CORSMiddleware:
 
     def __init__(
         self,
+        app: Callable[[LambdaRequest], Awaitable[LambdaResponse]],
         allow_origins: Sequence[str] = (),
         allow_methods: Sequence[str] = ("GET",),
         allow_headers: Sequence[str] = (),
@@ -43,6 +45,7 @@ class CORSMiddleware:
         expose_headers: Sequence[str] = (),
         max_age: int = 600,
     ) -> None:
+        self.app = app
         if "*" in allow_methods:
             allow_methods = ALL_METHODS
 
@@ -103,24 +106,33 @@ class CORSMiddleware:
 
         return origin in self.allow_origins
 
-    def process_request(self, request: LambdaRequest, response: LambdaResponse) -> LambdaResponse:
+    async def __call__(self, request: LambdaRequest) -> LambdaResponse:
         """
-        Add CORS headers to response based on request.
+        Process request through CORS middleware.
 
-        Called by the app after routing but before returning response.
+        PRE-PROCESSING:
+          - Check for origin header
+          - Handle preflight requests (short-circuit)
+
+        POST-PROCESSING:
+          - Add CORS headers to response
         """
         origin = request.headers.get("origin")
 
-        # No origin header - no CORS processing needed
+        # No origin header - no CORS processing, pass through
         if not origin:
-            return response
+            return await self.app(request)
 
-        # Handle preflight request
+        # PRE-PROCESSING: Handle preflight request (short-circuit)
         if request.method == "OPTIONS" and "access-control-request-method" in request.headers:
             return self._handle_preflight(request)
 
-        # Handle simple request - add CORS headers
+        # CALL NEXT: Execute handler
+        response = await self.app(request)
+
+        # POST-PROCESSING: Add CORS headers to response
         self._add_cors_headers(response, origin, request.headers.get("cookie") is not None)
+
         return response
 
     def _handle_preflight(self, request: LambdaRequest) -> LambdaResponse:
