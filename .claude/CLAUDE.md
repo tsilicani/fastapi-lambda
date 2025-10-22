@@ -159,7 +159,8 @@ def send_email(background_tasks: BackgroundTasks):
 - **Mandatory test coverage** for all new code
 - Target: >80% coverage (currently 83%)
 - Test edge cases and error paths
-- Use pytest with coverage reporting
+- **Always use `npm run test:cov`** for fast iterations (auto-excludes e2e tests)
+- E2E tests require AWS deployment: use `npm run test:e2e` when needed
 
 ### Code Quality Tools
 
@@ -182,14 +183,17 @@ def send_email(background_tasks: BackgroundTasks):
 **Example workflow:**
 
 ```bash
-# Run tests with coverage
-poetry run pytest --cov=fastapi_lambda --cov-report=term-missing
+# Run tests with coverage (excludes e2e)
+npm run test:cov
 
 # Find dead code
-poetry run vulture fastapi_lambda/
+npm run vulture
 
 # Type checking
-mypy fastapi_lambda/
+npm run typecheck
+
+# E2E tests (requires AWS deployment)
+npm run test:e2e
 ```
 
 ## Removed Features (Lambda Incompatible)

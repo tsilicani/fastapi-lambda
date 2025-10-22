@@ -11,7 +11,7 @@ from tests.utils import make_event
 
 
 @pytest.mark.asyncio
-async def test_v1_request(make_event):
+async def test_v1_request():
     """Test API Gateway v1 format."""
     event = make_event("POST", "/api/users", {"name": "test"}, {"q": "search"}, {"x-api-key": "KEY"}, {"id": "123"})
     req = LambdaRequest(event)

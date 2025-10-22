@@ -6,6 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 from fastapi_lambda.app import FastAPI
+from tests.utils import make_event
 
 
 class Item(BaseModel):
@@ -14,7 +15,7 @@ class Item(BaseModel):
 
 
 @pytest.mark.asyncio
-async def test_openapi_endpoint(make_event):
+async def test_openapi_endpoint():
     """Test /openapi.json endpoint exists."""
     app = FastAPI(title="Test API", version="1.0.0")
 

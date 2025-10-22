@@ -3,11 +3,12 @@
 import pytest
 
 from fastapi_lambda.app import FastAPI, create_lambda_handler
+from tests.utils import make_event
 from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
-async def test_get_route(make_event):
+async def test_get_route():
     """Test GET route."""
     app = FastAPI()
 
@@ -23,7 +24,7 @@ async def test_get_route(make_event):
     assert body["message"] == "hello"
 
 
-def test_get_route_with_lambda_handler(make_event):
+def test_get_route_with_lambda_handler():
     """Test GET route using create_lambda_handler."""
     app = FastAPI()
 
@@ -41,7 +42,7 @@ def test_get_route_with_lambda_handler(make_event):
 
 
 @pytest.mark.asyncio
-async def test_post_route(make_event):
+async def test_post_route():
     """Test POST route."""
     app = FastAPI()
 
@@ -58,7 +59,7 @@ async def test_post_route(make_event):
 
 
 @pytest.mark.asyncio
-async def test_path_parameters(make_event):
+async def test_path_parameters():
     """Test path parameters."""
     app = FastAPI()
 
@@ -75,7 +76,7 @@ async def test_path_parameters(make_event):
 
 
 @pytest.mark.asyncio
-async def test_query_parameters(make_event):
+async def test_query_parameters():
     """Test query parameters."""
     app = FastAPI()
 
@@ -92,7 +93,7 @@ async def test_query_parameters(make_event):
 
 
 @pytest.mark.asyncio
-async def test_multiple_methods(make_event):
+async def test_multiple_methods():
     """Test multiple HTTP methods on same path."""
     app = FastAPI()
 
@@ -126,7 +127,7 @@ async def test_multiple_methods(make_event):
 
 
 @pytest.mark.asyncio
-async def test_404_not_found(make_event):
+async def test_404_not_found():
     """Test 404 for non-existent route."""
     app = FastAPI()
 
@@ -141,7 +142,7 @@ async def test_404_not_found(make_event):
 
 
 @pytest.mark.asyncio
-async def test_sync_endpoint(make_event):
+async def test_sync_endpoint():
     """Test synchronous endpoint (non-async def)."""
     app = FastAPI()
 
@@ -158,7 +159,7 @@ async def test_sync_endpoint(make_event):
 
 
 @pytest.mark.asyncio
-async def test_mixed_sync_async_endpoints(make_event):
+async def test_mixed_sync_async_endpoints():
     """Test mix of sync and async endpoints."""
     app = FastAPI()
 
@@ -186,7 +187,7 @@ async def test_mixed_sync_async_endpoints(make_event):
 
 
 @pytest.mark.asyncio
-async def test_path_convertor_types(make_event):
+async def test_path_convertor_types():
     """Test different path parameter types (str, int, path)."""
     app = FastAPI()
 
@@ -225,7 +226,7 @@ async def test_invalid_convertor_type():
 
 
 @pytest.mark.asyncio
-async def test_post_with_invalid_json(make_event):
+async def test_post_with_invalid_json():
     """Test POST with non-JSON body (should not crash)."""
     app = FastAPI()
 
@@ -245,7 +246,7 @@ async def test_post_with_invalid_json(make_event):
 
 
 @pytest.mark.asyncio
-async def test_response_model(make_event):
+async def test_response_model():
     """Test response_model validation and serialization."""
     from pydantic import BaseModel
 
@@ -270,7 +271,7 @@ async def test_response_model(make_event):
 
 
 @pytest.mark.asyncio
-async def test_return_lambda_response_directly(make_event):
+async def test_return_lambda_response_directly():
     """Test returning LambdaResponse directly from endpoint."""
     from fastapi_lambda.response import LambdaResponse
 

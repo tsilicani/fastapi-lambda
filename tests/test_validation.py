@@ -6,6 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 from fastapi_lambda.app import FastAPI
+from tests.utils import make_event
 from tests.conftest import parse_response
 
 
@@ -22,7 +23,7 @@ class ItemResponse(BaseModel):
 
 
 @pytest.mark.asyncio
-async def test_request_body_validation(make_event):
+async def test_request_body_validation():
     """Test request body validation with Pydantic."""
     app = FastAPI()
 
@@ -41,7 +42,7 @@ async def test_request_body_validation(make_event):
 
 
 @pytest.mark.asyncio
-async def test_validation_error_422(make_event):
+async def test_validation_error_422():
     """Test validation error returns 422."""
     app = FastAPI()
 
@@ -59,7 +60,7 @@ async def test_validation_error_422(make_event):
 
 
 @pytest.mark.asyncio
-async def test_response_model_serialization(make_event):
+async def test_response_model_serialization():
     """Test response model serialization."""
     app = FastAPI()
 
@@ -86,7 +87,7 @@ async def test_response_model_serialization(make_event):
 
 
 @pytest.mark.asyncio
-async def test_optional_fields(make_event):
+async def test_optional_fields():
     """Test optional fields in Pydantic models."""
     app = FastAPI()
 
@@ -116,7 +117,7 @@ async def test_optional_fields(make_event):
 
 
 @pytest.mark.asyncio
-async def test_type_coercion(make_event):
+async def test_type_coercion():
     """Test Pydantic type coercion."""
     app = FastAPI()
 
@@ -134,7 +135,7 @@ async def test_type_coercion(make_event):
 
 
 @pytest.mark.asyncio
-async def test_query_with_examples(make_event):
+async def test_query_with_examples():
     """Test Query parameter with examples."""
     from fastapi_lambda.param_functions import Query
 
@@ -153,7 +154,7 @@ async def test_query_with_examples(make_event):
 
 
 @pytest.mark.asyncio
-async def test_body_with_examples(make_event):
+async def test_body_with_examples():
     """Test Body parameter with examples."""
     from fastapi_lambda.param_functions import Body
 

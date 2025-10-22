@@ -8,6 +8,7 @@ from typing_extensions import Annotated
 
 from fastapi_lambda._compat import copy_field_info, get_missing_field_error
 from fastapi_lambda.params import Query
+from tests.utils import make_event
 
 
 class TestCopyFieldInfo:
@@ -156,7 +157,7 @@ class TestModelFieldGetDefault:
     """Test ModelField.get_default() via request parameters with defaults"""
 
     @pytest.mark.asyncio
-    async def test_query_param_with_default_value(self, make_event):
+    async def test_query_param_with_default_value(self):
         """Test optional query param with default value.
 
         Real scenario: when query param is missing, get_default() is called
@@ -182,22 +183,21 @@ class TestModelFieldGetDefault:
         assert body["limit"] == 10
 
     @pytest.mark.asyncio
-    async def test_body_param_with_default_factory(self, make_event):
+    async def test_body_param_with_default_factory(self):
         """Test optional body param with default_factory (list).
 
         Real scenario: POST endpoint with optional body that has default_factory.
         When body is None, get_default() calls the factory at dependencies.py:557.
         """
+        from typing import List
+
         from fastapi_lambda.app import FastAPI
         from fastapi_lambda.params import Body
-        from typing import List
 
         app = FastAPI()
 
         @app.post("/items")
-        async def create_items(
-            tags: Annotated[List[str], Body(default_factory=list)]
-        ):
+        async def create_items(tags: Annotated[List[str], Body(default_factory=list)]):
             return {"tags": tags, "count": len(tags)}
 
         # POST without body - should call default_factory
@@ -225,17 +225,16 @@ class TestFieldAnnotationIsComplex:
         2. Union detection triggers recursive call with each arg (line 162)
         3. One arg is Annotated[int, ...] which unwraps at line 165 ✓
         """
-        from fastapi_lambda.app import FastAPI
         from typing import Union
+
+        from fastapi_lambda.app import FastAPI
 
         app = FastAPI()
 
         # Query param with Union[Annotated[int, ...], None] - no explicit Query()
         # FastAPI must auto-detect this is scalar and use Query (not Body)
         @app.get("/items")
-        async def get_items(
-            limit: Union[Annotated[int, Field(gt=0, le=100)], None] = None
-        ):
+        async def get_items(limit: Union[Annotated[int, Field(gt=0, le=100)], None] = None):
             return {"limit": limit}
 
         # Verify route is created

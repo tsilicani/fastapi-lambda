@@ -5,13 +5,14 @@ from typing import Annotated, Optional
 import pytest
 
 from fastapi_lambda.app import FastAPI
+from tests.utils import make_event
 from fastapi_lambda.params import Depends
 from fastapi_lambda.security import HTTPAuthorizationCredentials, HTTPBearer
 from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
-async def test_bearer_auth_success(make_event):
+async def test_bearer_auth_success():
     """Test Bearer authentication with valid token."""
     app = FastAPI()
     security = HTTPBearer()
@@ -30,7 +31,7 @@ async def test_bearer_auth_success(make_event):
 
 
 @pytest.mark.asyncio
-async def test_bearer_auth_missing_token(make_event):
+async def test_bearer_auth_missing_token():
     """Test Bearer authentication without token returns 403."""
     app = FastAPI()
     security = HTTPBearer()
@@ -48,7 +49,7 @@ async def test_bearer_auth_missing_token(make_event):
 
 
 @pytest.mark.asyncio
-async def test_bearer_auth_invalid_scheme(make_event):
+async def test_bearer_auth_invalid_scheme():
     """Test Bearer authentication with wrong scheme returns 403."""
     app = FastAPI()
     security = HTTPBearer()
@@ -65,7 +66,7 @@ async def test_bearer_auth_invalid_scheme(make_event):
 
 
 @pytest.mark.asyncio
-async def test_bearer_auth_optional(make_event):
+async def test_bearer_auth_optional():
     """Test optional Bearer authentication (auto_error=False)."""
     app = FastAPI()
     security = HTTPBearer(auto_error=False)
@@ -97,7 +98,7 @@ async def test_bearer_auth_optional(make_event):
 
 
 @pytest.mark.asyncio
-async def test_user_context_from_token(make_event):
+async def test_user_context_from_token():
     """Test creating user context from Bearer token."""
     app = FastAPI()
     security = HTTPBearer()
@@ -123,7 +124,7 @@ async def test_user_context_from_token(make_event):
 
 
 @pytest.mark.asyncio
-async def test_http_base_custom_scheme(make_event):
+async def test_http_base_custom_scheme():
     """Test HTTPBase with custom authentication scheme."""
     from fastapi_lambda.security import HTTPBase
 
@@ -144,7 +145,7 @@ async def test_http_base_custom_scheme(make_event):
 
 
 @pytest.mark.asyncio
-async def test_http_base_optional_auth(make_event):
+async def test_http_base_optional_auth():
     """Test HTTPBase with optional authentication."""
     from fastapi_lambda.security import HTTPBase
 
@@ -174,7 +175,7 @@ async def test_http_base_optional_auth(make_event):
 
 
 @pytest.mark.asyncio
-async def test_bearer_optional_wrong_scheme(make_event):
+async def test_bearer_optional_wrong_scheme():
     """Test Bearer with auto_error=False and wrong scheme returns None."""
     app = FastAPI()
     security = HTTPBearer(auto_error=False)
@@ -192,7 +193,7 @@ async def test_bearer_optional_wrong_scheme(make_event):
 
 
 @pytest.mark.asyncio
-async def test_http_base_missing_auth(make_event):
+async def test_http_base_missing_auth():
     """Test HTTPBase with missing authorization header raises 403."""
     from fastapi_lambda.security import HTTPBase
 

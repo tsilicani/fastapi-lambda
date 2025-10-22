@@ -2,11 +2,12 @@
 import pytest
 
 from fastapi_lambda.app import FastAPI
+from tests.utils import make_event
 from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
-async def test_path_function(make_event):
+async def test_path_function():
     """Test Path() wrapper function."""
     from fastapi_lambda.param_functions import Path
 
@@ -25,7 +26,7 @@ async def test_path_function(make_event):
 
 
 @pytest.mark.asyncio
-async def test_header_function(make_event):
+async def test_header_function():
     """Test Header() wrapper function."""
     from fastapi_lambda.param_functions import Header
 
@@ -44,7 +45,7 @@ async def test_header_function(make_event):
 
 
 @pytest.mark.asyncio
-async def test_security_function(make_event):
+async def test_security_function():
     """Test Security() wrapper function."""
     from fastapi_lambda.param_functions import Security
 

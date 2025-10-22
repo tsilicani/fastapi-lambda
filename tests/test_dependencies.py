@@ -5,12 +5,13 @@ from typing import Annotated
 import pytest
 
 from fastapi_lambda.app import FastAPI
+from tests.utils import make_event
 from fastapi_lambda.params import Depends
 from tests.conftest import parse_response
 
 
 @pytest.mark.asyncio
-async def test_simple_dependency(make_event):
+async def test_simple_dependency():
     """Test simple dependency injection."""
     app = FastAPI()
 
@@ -30,7 +31,7 @@ async def test_simple_dependency(make_event):
 
 
 @pytest.mark.asyncio
-async def test_dependency_with_yield(make_event):
+async def test_dependency_with_yield():
     """Test dependency with yield (cleanup)."""
     app = FastAPI()
     cleanup_called = []
@@ -57,7 +58,7 @@ async def test_dependency_with_yield(make_event):
 
 
 @pytest.mark.asyncio
-async def test_nested_dependencies(make_event):
+async def test_nested_dependencies():
     """Test nested dependencies."""
     app = FastAPI()
 
@@ -80,7 +81,7 @@ async def test_nested_dependencies(make_event):
 
 
 @pytest.mark.asyncio
-async def test_request_dependency(make_event):
+async def test_request_dependency():
     """Test injecting Request object."""
     app = FastAPI()
     from fastapi_lambda.requests import LambdaRequest
@@ -99,7 +100,7 @@ async def test_request_dependency(make_event):
 
 
 @pytest.mark.asyncio
-async def test_dependency_caching(make_event):
+async def test_dependency_caching():
     """Test that dependencies are cached within a request."""
     app = FastAPI()
     call_count = []
@@ -131,7 +132,7 @@ async def test_dependency_caching(make_event):
 
 
 @pytest.mark.asyncio
-async def test_class_dependency_raises_error(make_event):
+async def test_class_dependency_raises_error():
     """Test that using a class as dependency raises RuntimeError."""
     app = FastAPI()
 
@@ -153,7 +154,7 @@ async def test_class_dependency_raises_error(make_event):
 
 
 @pytest.mark.asyncio
-async def test_sync_generator_dependency_raises_error(make_event):
+async def test_sync_generator_dependency_raises_error():
     """Test that using a sync generator as dependency raises RuntimeError."""
     app = FastAPI()
 
@@ -173,7 +174,7 @@ async def test_sync_generator_dependency_raises_error(make_event):
 
 
 @pytest.mark.asyncio
-async def test_dependency_with_request_injection(make_event):
+async def test_dependency_with_request_injection():
     """Test dependency with LambdaRequest auto-injection."""
     from fastapi_lambda.requests import LambdaRequest
 
@@ -195,7 +196,7 @@ async def test_dependency_with_request_injection(make_event):
 
 
 @pytest.mark.asyncio
-async def test_query_and_body_params(make_event):
+async def test_query_and_body_params():
     """Test query and body parameter extraction."""
     from pydantic import BaseModel
 
@@ -219,7 +220,7 @@ async def test_query_and_body_params(make_event):
 
 
 @pytest.mark.asyncio
-async def test_callable_with_dunder_call(make_event):
+async def test_callable_with_dunder_call():
     """Test dependency using callable object with __call__."""
     app = FastAPI()
 
@@ -246,7 +247,7 @@ async def test_callable_with_dunder_call(make_event):
 
 
 @pytest.mark.asyncio
-async def test_no_cache_dependency(make_event):
+async def test_no_cache_dependency():
     """Test dependency with use_cache=False."""
     app = FastAPI()
     call_count = []
@@ -273,7 +274,7 @@ async def test_no_cache_dependency(make_event):
 
 
 @pytest.mark.asyncio
-async def test_path_param_with_annotation(make_event):
+async def test_path_param_with_annotation():
     """Test path parameter with Annotated type."""
     app = FastAPI()
 
@@ -290,7 +291,7 @@ async def test_path_param_with_annotation(make_event):
 
 
 @pytest.mark.asyncio
-async def test_header_params(make_event):
+async def test_header_params():
     """Test header parameter extraction."""
     from fastapi_lambda.param_functions import Header
 
