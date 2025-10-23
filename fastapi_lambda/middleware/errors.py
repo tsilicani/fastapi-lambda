@@ -9,7 +9,7 @@ import traceback
 from typing import Awaitable, Callable, Optional
 
 from fastapi_lambda.requests import LambdaRequest
-from fastapi_lambda.response import JSONResponse, LambdaResponse
+from fastapi_lambda.response import JSONResponse, Response
 
 
 class ServerErrorMiddleware:
@@ -29,8 +29,8 @@ class ServerErrorMiddleware:
 
     def __init__(
         self,
-        app: Callable[[LambdaRequest], Awaitable[LambdaResponse]],
-        handler: Optional[Callable[[LambdaRequest, Exception], Awaitable[LambdaResponse]]] = None,
+        app: Callable[[LambdaRequest], Awaitable[Response]],
+        handler: Optional[Callable[[LambdaRequest, Exception], Awaitable[Response]]] = None,
         debug: bool = False,
     ):
         """
@@ -45,7 +45,7 @@ class ServerErrorMiddleware:
         self.handler = handler
         self.debug = debug
 
-    async def __call__(self, request: LambdaRequest) -> LambdaResponse:
+    async def __call__(self, request: LambdaRequest) -> Response:
         """
         Execute middleware.
 
@@ -67,7 +67,7 @@ class ServerErrorMiddleware:
             # Production: generic error
             return self._error_response(exc)
 
-    def _debug_response(self, exc: Exception) -> LambdaResponse:
+    def _debug_response(self, exc: Exception) -> Response:
         """Generate detailed error response for debug mode."""
         return JSONResponse(
             content={
@@ -78,7 +78,7 @@ class ServerErrorMiddleware:
             status_code=500,
         )
 
-    def _error_response(self, exc: Exception) -> LambdaResponse:
+    def _error_response(self, exc: Exception) -> Response:
         """Generate generic error response for production."""
         return JSONResponse(
             content={"detail": "Internal Server Error"},

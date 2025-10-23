@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from typing import Awaitable, Callable
 
 from fastapi_lambda.requests import LambdaRequest
-from fastapi_lambda.response import LambdaResponse, PlainTextResponse
+from fastapi_lambda.response import PlainTextResponse, Response
 
 ALL_METHODS = ("DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT")
 SAFELISTED_HEADERS = {"Accept", "Accept-Language", "Content-Language", "Content-Type"}
@@ -36,7 +36,7 @@ class CORSMiddleware:
 
     def __init__(
         self,
-        app: Callable[[LambdaRequest], Awaitable[LambdaResponse]],
+        app: Callable[[LambdaRequest], Awaitable[Response]],
         allow_origins: Sequence[str] = (),
         allow_methods: Sequence[str] = ("GET",),
         allow_headers: Sequence[str] = (),
@@ -106,7 +106,7 @@ class CORSMiddleware:
 
         return origin in self.allow_origins
 
-    async def __call__(self, request: LambdaRequest) -> LambdaResponse:
+    async def __call__(self, request: LambdaRequest) -> Response:
         """
         Process request through CORS middleware.
 
@@ -135,7 +135,7 @@ class CORSMiddleware:
 
         return response
 
-    def _handle_preflight(self, request: LambdaRequest) -> LambdaResponse:
+    def _handle_preflight(self, request: LambdaRequest) -> Response:
         """Handle CORS preflight OPTIONS request."""
         requested_origin = request.headers.get("origin", "")
         requested_method = request.headers.get("access-control-request-method", "")
@@ -171,7 +171,7 @@ class CORSMiddleware:
 
         return PlainTextResponse("OK", status_code=200, headers=headers)
 
-    def _add_cors_headers(self, response: LambdaResponse, origin: str, has_cookie: bool) -> None:
+    def _add_cors_headers(self, response: Response, origin: str, has_cookie: bool) -> None:
         """Add CORS headers to a simple (non-preflight) response."""
         # Add pre-computed simple headers
         response.headers.update(self.simple_headers)
@@ -187,7 +187,7 @@ class CORSMiddleware:
             self._add_vary_header(response, "Origin")
 
     @staticmethod
-    def _add_vary_header(response: LambdaResponse, value: str) -> None:
+    def _add_vary_header(response: Response, value: str) -> None:
         """Add or append to Vary header."""
         existing = response.headers.get("Vary", "")
         if existing:

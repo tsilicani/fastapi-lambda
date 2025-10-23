@@ -13,9 +13,9 @@ from fastapi_lambda.middleware.errors import ServerErrorMiddleware
 from fastapi_lambda.middleware.exceptions import ExceptionMiddleware
 from fastapi_lambda.openapi_schema import get_openapi_schema
 from fastapi_lambda.requests import LambdaRequest
-from fastapi_lambda.response import LambdaResponse
+from fastapi_lambda.response import Response
 from fastapi_lambda.router import LambdaRouter
-from fastapi_lambda.types import LambdaEvent
+from fastapi_lambda.types import LambdaEvent, LambdaResponse as LambdaResponseDict
 
 
 class FastAPI:
@@ -55,7 +55,7 @@ class FastAPI:
 
         # Middleware stack (lazy-built on first request)
         self.user_middleware: List[Middleware] = []
-        self._middleware_stack: Optional[Callable[[LambdaRequest], Awaitable[LambdaResponse]]] = None
+        self._middleware_stack: Optional[Callable[[LambdaRequest], Awaitable[Response]]] = None
 
         # Register OpenAPI endpoint if enabled
         if self.openapi_url:
@@ -141,7 +141,7 @@ class FastAPI:
             include_in_schema=False,
         )
 
-    def build_middleware_stack(self) -> Callable[[LambdaRequest], Awaitable[LambdaResponse]]:
+    def build_middleware_stack(self) -> Callable[[LambdaRequest], Awaitable[Response]]:
         """
         Build middleware stack matching FastAPI/Starlette pattern.
 
@@ -176,10 +176,10 @@ class FastAPI:
         )
 
         # Start with router as innermost layer
-        async def router_handler(request: LambdaRequest) -> LambdaResponse:
+        async def router_handler(request: LambdaRequest) -> Response:
             return await self.router.route(request)
 
-        app: Callable[[LambdaRequest], Awaitable[LambdaResponse]] = router_handler
+        app: Callable[[LambdaRequest], Awaitable[Response]] = router_handler
 
         # Wrap with middleware stack (reverse order - LIFO)
         # FastAPI pattern: for cls, args, kwargs in reversed(middleware)
@@ -192,7 +192,7 @@ class FastAPI:
         self,
         event: LambdaEvent,
         context: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+    ) -> LambdaResponseDict:
         """
         Lambda handler entry point.
 
@@ -219,7 +219,7 @@ class FastAPI:
         response = await self._middleware_stack(request)
 
         # Convert to Lambda response format
-        return response.to_lambda_response()  # type: ignore[return-value]
+        return response.to_lambda_response()
 
 
 # Convenience function for Lambda handler
@@ -239,7 +239,7 @@ def create_lambda_handler(app: FastAPI) -> Callable:
     """
     import asyncio
 
-    def lambda_handler(event: LambdaEvent, context: Optional[Any] = None) -> Dict[str, Any]:
+    def lambda_handler(event: LambdaEvent, context: Optional[Any] = None) -> LambdaResponseDict:
         return asyncio.run(app(event, context))
 
     return lambda_handler

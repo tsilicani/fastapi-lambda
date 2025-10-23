@@ -78,7 +78,7 @@ class LambdaEvent(TypedDict, total=False):
     rawQueryString: str  # v2.0: raw query string
 
 
-class LambdaResponse(TypedDict, total=False):
+class LambdaResponse(TypedDict):
     """API Gateway response format (compatible with v1.0 and v2.0)."""
 
     statusCode: int

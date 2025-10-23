@@ -2,11 +2,13 @@
 FastAPI-Lambda framework - Lambda-native FastAPI.
 """
 
+from fastapi_lambda import status as status
 from fastapi_lambda.app import FastAPI as FastAPI
 from fastapi_lambda.response import HTMLResponse as HTMLResponse
 from fastapi_lambda.response import JSONResponse as JSONResponse
 from fastapi_lambda.response import PlainTextResponse as PlainTextResponse
 from fastapi_lambda.response import RedirectResponse as RedirectResponse
+from fastapi_lambda.response import Response as Response
 
 from .app import LambdaEvent as LambdaEvent
 from .app import create_lambda_handler as create_lambda_handler

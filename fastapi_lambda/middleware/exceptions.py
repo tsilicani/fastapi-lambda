@@ -9,7 +9,7 @@ from typing import Awaitable, Callable, Dict, Optional, Type
 
 from fastapi_lambda.exceptions import HTTPException, RequestValidationError
 from fastapi_lambda.requests import LambdaRequest
-from fastapi_lambda.response import JSONResponse, LambdaResponse
+from fastapi_lambda.response import JSONResponse, Response
 
 
 class ExceptionMiddleware:
@@ -29,7 +29,7 @@ class ExceptionMiddleware:
 
     def __init__(
         self,
-        app: Callable[[LambdaRequest], Awaitable[LambdaResponse]],
+        app: Callable[[LambdaRequest], Awaitable[Response]],
         handlers: Optional[Dict[Type[Exception], Callable]] = None,
     ):
         """
@@ -49,7 +49,7 @@ class ExceptionMiddleware:
         if handlers is not None:
             self._exception_handlers.update(handlers)
 
-    async def __call__(self, request: LambdaRequest) -> LambdaResponse:
+    async def __call__(self, request: LambdaRequest) -> Response:
         """
         Execute middleware.
 
@@ -82,7 +82,7 @@ class ExceptionMiddleware:
                 return self._exception_handlers[cls]
         return None
 
-    async def _http_exception_handler(self, request: LambdaRequest, exc: HTTPException) -> LambdaResponse:
+    async def _http_exception_handler(self, request: LambdaRequest, exc: HTTPException) -> Response:
         """
         Handle HTTPException.
 
@@ -92,7 +92,7 @@ class ExceptionMiddleware:
 
         # 204 and 304 should not have body
         if exc.status_code in (204, 304):
-            return LambdaResponse(
+            return Response(
                 content=b"",
                 status_code=exc.status_code,
                 headers=headers or {},
@@ -106,7 +106,7 @@ class ExceptionMiddleware:
 
     async def _validation_exception_handler(
         self, request: LambdaRequest, exc: RequestValidationError
-    ) -> LambdaResponse:
+    ) -> Response:
         """
         Handle RequestValidationError.
 

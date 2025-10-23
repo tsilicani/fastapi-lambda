@@ -3,7 +3,7 @@
 import pytest
 
 from fastapi_lambda import FastAPI, JSONResponse
-from fastapi_lambda.response import HTMLResponse, LambdaResponse, PlainTextResponse, RedirectResponse
+from fastapi_lambda.response import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from tests.utils import make_event
 
 
@@ -93,13 +93,13 @@ async def test_redirect_with_custom_headers():
 
 @pytest.mark.asyncio
 async def test_lambda_response_none_content():
-    """Test LambdaResponse with None content."""
+    """Test Response with None content."""
 
     app = FastAPI()
 
     @app.get("/empty")
     async def empty():
-        return LambdaResponse(None, status_code=204)
+        return Response(None, status_code=204)
 
     event = make_event(method="GET", path="/empty")
     response = await app(event)
@@ -110,13 +110,13 @@ async def test_lambda_response_none_content():
 
 @pytest.mark.asyncio
 async def test_lambda_response_bytes_content():
-    """Test LambdaResponse with bytes content."""
+    """Test Response with bytes content."""
 
     app = FastAPI()
 
     @app.get("/bytes")
     async def get_bytes():
-        return LambdaResponse(b"Binary data")
+        return Response(b"Binary data")
 
     event = make_event(method="GET", path="/bytes")
     response = await app(event)
@@ -126,13 +126,13 @@ async def test_lambda_response_bytes_content():
 
 @pytest.mark.asyncio
 async def test_lambda_response_int_content():
-    """Test LambdaResponse with int content."""
+    """Test Response with int content."""
 
     app = FastAPI()
 
     @app.get("/number")
     async def get_number():
-        return LambdaResponse(12345)
+        return Response(12345)
 
     event = make_event(method="GET", path="/number")
     response = await app(event)
@@ -148,7 +148,7 @@ async def test_response_media_type_sets_content_type():
 
     @app.get("/xml")
     async def get_xml():
-        return LambdaResponse("<xml/>", media_type="application/xml")
+        return Response("<xml/>", media_type="application/xml")
 
     event = make_event(method="GET", path="/xml")
     response = await app(event)

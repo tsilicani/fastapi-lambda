@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 # Import from lambda_dependencies (not from old ASGI code)
 from fastapi_lambda.dependencies import get_dependant, solve_dependencies
 from fastapi_lambda.requests import LambdaRequest
-from fastapi_lambda.response import JSONResponse, LambdaResponse
+from fastapi_lambda.response import JSONResponse, Response
 
 
 # Path parameter converters (simplified from Starlette)
@@ -171,7 +171,7 @@ class Route:
         self,
         request: LambdaRequest,
         path_params: Dict[str, Any],
-    ) -> LambdaResponse:
+    ) -> Response:
         """
         Execute the endpoint with dependency injection.
         """
@@ -220,8 +220,8 @@ class Route:
                 loop = asyncio.get_event_loop()
                 result = await loop.run_in_executor(None, lambda: self.endpoint(**endpoint_values))
 
-        # If result is already a LambdaResponse, return it
-        if isinstance(result, LambdaResponse):
+        # If result is already a Response, return it
+        if isinstance(result, Response):
             return result
 
         # Serialize with response_model if provided
@@ -326,7 +326,7 @@ class LambdaRouter:
 
         return decorator
 
-    async def route(self, request: LambdaRequest) -> LambdaResponse:
+    async def route(self, request: LambdaRequest) -> Response:
         """
         Find matching route and execute.
 

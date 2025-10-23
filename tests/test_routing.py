@@ -7,7 +7,7 @@ from typing import cast
 
 from fastapi_lambda.app import FastAPI, create_lambda_handler
 from fastapi_lambda.exceptions import FastAPIError
-from fastapi_lambda.response import LambdaResponse
+from fastapi_lambda.response import Response
 from fastapi_lambda.router import Convertor
 from fastapi_lambda.types import HttpMethod
 from tests.conftest import parse_response
@@ -279,13 +279,13 @@ async def test_response_model():
 
 @pytest.mark.asyncio
 async def test_return_lambda_response_directly():
-    """Test returning LambdaResponse directly from endpoint."""
+    """Test returning Response directly from endpoint."""
 
     app = FastAPI()
 
     @app.get("/custom")
     async def custom_response():
-        return LambdaResponse(content="custom content", status_code=201, headers={"X-Custom": "header"})
+        return Response(content="custom content", status_code=201, headers={"X-Custom": "header"})
 
     event = make_event(method="GET", path="/custom")
     response = await app(event)
@@ -308,9 +308,9 @@ def test_invalid_response_model():
 
     app = FastAPI()
 
-    # Try to use LambdaResponse as response_model (invalid - it's not a Pydantic model)
+    # Try to use Response as response_model (invalid - it's not a Pydantic model)
     with pytest.raises(FastAPIError, match="Invalid args for response field"):
 
-        @app.get("/invalid", response_model=LambdaResponse)  # type: ignore
+        @app.get("/invalid", response_model=Response)  # type: ignore
         async def invalid_endpoint():
             return {"data": "test"}
