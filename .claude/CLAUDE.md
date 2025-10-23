@@ -405,6 +405,32 @@ app.add_middleware(C)  # Outermost
   - FastAPI behavior: auto-runs sync deps in threadpool via Starlette
   - Trade-off: adds complexity and minimal overhead vs explicit async/sync separation
   - Consider: optional flag `auto_threadpool=True` for FastAPI compatibility
+- [ ] **Make all middleware assignment FastAPI compatible**
+  - Currently: Only `app.add_middleware()` is implemented
+  - Missing patterns:
+    - [ ] Constructor `middleware` parameter (Starlette-style)
+      - Accept `Optional[Sequence[Middleware]]` in `__init__`
+      - Example: `app = FastAPI(middleware=[Middleware(CORS, ...)])`
+    - [ ] `@app.middleware("http")` decorator
+      - Implement `FastAPI.middleware(middleware_type: str)` method
+      - Create `BaseHTTPMiddleware` helper class
+      - Wraps function with `(request, call_next)` signature
+      - Example:
+        ```python
+        @app.middleware("http")
+        async def add_header(request: Request, call_next):
+            response = await call_next(request)
+            response.headers["X-Custom"] = "value"
+            return response
+        ```
+  - Implementation steps:
+    - [ ] Add `middleware` param to `FastAPI.__init__` with `Sequence` type
+    - [ ] Create `BaseHTTPMiddleware` class in `middleware/base.py`
+    - [ ] Implement `FastAPI.middleware()` decorator method
+    - [ ] Add comprehensive tests for all 3 patterns
+    - [ ] Update docs with examples of all middleware assignment methods
+  - Estimated effort: ~1.5 hours
+  - Benefits: Full FastAPI API compatibility, more flexible middleware setup
 - [🚧] `APIRouter` support - **IN PROGRESS** (see Active Development section)
   - Part of middleware stack refactor
   - Includes route grouping with shared prefix/tags/dependencies
