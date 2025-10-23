@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 
 import pytest
 
-from fastapi_lambda.app import FastAPI
+from fastapi_lambda.applications import FastAPI
 from fastapi_lambda.params import Depends
 from fastapi_lambda.security import HTTPAuthorizationCredentials, HTTPBase, HTTPBearer
 from tests.conftest import parse_response

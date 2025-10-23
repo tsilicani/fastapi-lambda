@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from typing import cast
 
-from fastapi_lambda.app import FastAPI, create_lambda_handler
+from fastapi_lambda.applications import FastAPI, create_lambda_handler
 from fastapi_lambda.exceptions import FastAPIError
 from fastapi_lambda.response import Response
 from fastapi_lambda.router import Convertor

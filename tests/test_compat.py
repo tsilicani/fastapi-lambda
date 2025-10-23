@@ -9,7 +9,7 @@ from pydantic import Field
 from typing_extensions import Annotated
 
 from fastapi_lambda._compat import copy_field_info, get_missing_field_error
-from fastapi_lambda.app import FastAPI
+from fastapi_lambda.applications import FastAPI
 from fastapi_lambda.params import Body, Query
 from tests.conftest import parse_response
 from tests.utils import make_event

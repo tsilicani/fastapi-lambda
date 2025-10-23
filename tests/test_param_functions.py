@@ -1,7 +1,7 @@
 """Tests for param_functions - 100% coverage with minimal code."""
 import pytest
 
-from fastapi_lambda.app import FastAPI
+from fastapi_lambda.applications import FastAPI
 from fastapi_lambda.param_functions import Header, Path, Security
 from tests.conftest import parse_response
 from tests.utils import make_event

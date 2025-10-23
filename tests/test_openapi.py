@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 from fastapi_lambda import Body, Query
-from fastapi_lambda.app import FastAPI
+from fastapi_lambda.applications import FastAPI
 from tests.utils import make_event
 
 

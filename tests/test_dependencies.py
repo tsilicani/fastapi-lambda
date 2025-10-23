@@ -5,7 +5,7 @@ from typing import Annotated
 import pytest
 from pydantic import BaseModel
 
-from fastapi_lambda.app import FastAPI
+from fastapi_lambda.applications import FastAPI
 from fastapi_lambda.param_functions import Header
 from fastapi_lambda.params import Depends
 from fastapi_lambda.requests import LambdaRequest

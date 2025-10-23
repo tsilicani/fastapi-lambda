@@ -62,7 +62,7 @@ def lambda_handler(event, context):
     return asyncio.run(app(event, context))
 ```
 
-**File:** `fastapi_lambda/app.py:123-154`
+**File:** `fastapi_lambda/applications.py:123-154`
 
 ```python
 async def __call__(self, event: LambdaEvent, context: Dict) -> Dict[str, Any]:
@@ -606,7 +606,7 @@ if self.response_field:
 
 ## Componenti Chiave
 
-### 1. FastAPI (`app.py`)
+### 1. FastAPI (`applications.py`)
 
 **Entry point dell'applicazione.**
 
