@@ -4,7 +4,42 @@ Middleware wrapper for lazy instantiation.
 Inspired by: starlette.middleware.Middleware
 """
 
-from typing import Any, Iterator, Type
+from typing import Any, Awaitable, Callable, Iterator, Type
+
+from fastapi_lambda.requests import LambdaRequest
+from fastapi_lambda.response import Response
+
+
+class BaseHTTPMiddleware:
+    """
+    Base class for HTTP middleware using function dispatch pattern.
+
+    Wraps async functions with signature: (request, call_next) -> response
+    Matches FastAPI/Starlette BaseHTTPMiddleware behavior (Lambda-native).
+
+    Example:
+        @app.middleware("http")
+        async def add_header(request: Request, call_next):
+            response = await call_next(request)
+            response.headers["X-Custom"] = "value"
+            return response
+    """
+
+    def __init__(
+        self,
+        app: Callable[[LambdaRequest], Awaitable[Response]],
+        dispatch: Callable[[LambdaRequest, Callable], Awaitable[Response]],
+    ):
+        self.app = app
+        self.dispatch = dispatch
+
+    async def __call__(self, request: LambdaRequest) -> Response:
+        """Execute middleware with call_next pattern."""
+
+        async def call_next(req: LambdaRequest) -> Response:
+            return await self.app(req)
+
+        return await self.dispatch(request, call_next)
 
 
 class Middleware:

@@ -6,16 +6,27 @@ Replaces fastapi.applications.FastAPI which is ASGI-based.
 Original FastAPI implementation: https://github.com/fastapi/fastapi/blob/master/fastapi/applications.py
 """
 
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Type
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Type,
+)
 
-from fastapi_lambda.middleware.base import Middleware
+from fastapi_lambda.middleware.base import BaseHTTPMiddleware, Middleware
 from fastapi_lambda.middleware.errors import ServerErrorMiddleware
 from fastapi_lambda.middleware.exceptions import ExceptionMiddleware
 from fastapi_lambda.openapi_schema import get_openapi_schema
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import Response
 from fastapi_lambda.router import LambdaRouter
-from fastapi_lambda.types import LambdaEvent, LambdaResponse as LambdaResponseDict
+from fastapi_lambda.types import DecoratedCallable, LambdaEvent
+from fastapi_lambda.types import LambdaResponse as LambdaResponseDict
 
 
 class FastAPI:
@@ -36,6 +47,7 @@ class FastAPI:
         tags: Optional[List[Dict[str, Any]]] = None,
         servers: Optional[List[Dict[str, str]]] = None,
         exception_handlers: Optional[Dict[Any, Callable]] = None,
+        middleware: Optional[Sequence[Middleware]] = None,
     ):
         self.title = title
         self.version = version
@@ -54,7 +66,7 @@ class FastAPI:
             self.exception_handlers.update(exception_handlers)
 
         # Middleware stack (lazy-built on first request)
-        self.user_middleware: List[Middleware] = []
+        self.user_middleware: List[Middleware] = [] if middleware is None else list(middleware)
         self._middleware_stack: Optional[Callable[[LambdaRequest], Awaitable[Response]]] = None
 
         # Register OpenAPI endpoint if enabled
@@ -62,27 +74,69 @@ class FastAPI:
             self._register_openapi_route()
 
     def add_middleware(self, middleware_class: Type, **options: Any) -> None:
+        """Add middleware to the stack, placing it as the outermost layer."""
+
+        if self._middleware_stack is not None:  # pragma: no cover
+            raise RuntimeError("Cannot add middleware after an application has started")
+        self.user_middleware.insert(0, Middleware(middleware_class, **options))
+
+    def middleware(
+        self, _middleware_type: Literal["http"] = "http"
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        """Decorator to add middleware to the stack, placing it as the outermost layer."""
+
+        def decorator(func: DecoratedCallable) -> DecoratedCallable:
+            self.add_middleware(BaseHTTPMiddleware, dispatch=func)
+            return func
+
+        return decorator
+
+    def build_middleware_stack(self) -> Callable[[LambdaRequest], Awaitable[Response]]:
         """
-        Add middleware to the application.
+        Build middleware stack matching FastAPI/Starlette pattern.
 
-        Middleware are lazy-instantiated and wrapped in reverse order (LIFO).
-        Last added middleware is outermost (executes first).
+        Stack order:
+        User Middleware (CORS, logging, auth, etc.)
+          → ServerErrorMiddleware (catches 500)
+            → ExceptionMiddleware (innermost - handles HTTPException)
+              → Router
 
-        Example:
-            from fastapi_lambda.middleware.cors import CORSMiddleware
+        Note: User middleware is outermost to ensure CORS headers are added
+        even on 500 errors. ServerError catches exceptions and returns response,
+        which then flows back through user middleware post-processing.
 
-            app.add_middleware(
-                CORSMiddleware,
-                allow_origins=["https://example.com"],
-                allow_methods=["*"],
-                allow_headers=["*"],
-            )
+        Inspired by: fastapi.applications.FastAPI.build_middleware_stack()
         """
-        # Store as Middleware object for lazy instantiation
-        self.user_middleware.append(Middleware(middleware_class, **options))
 
-        # Invalidate cached stack (will rebuild on next request)
-        self._middleware_stack = None
+        # Separate error handler (500/Exception) from exception handlers
+        error_handler = None
+        exception_handlers: Dict[Any, Callable] = {}
+
+        for key, value in self.exception_handlers.items():
+            if key in (500, Exception):
+                error_handler = value
+            else:
+                exception_handlers[key] = value
+
+        # Build middleware list: user + system + system (FastAPI pattern)
+        middleware = (
+            self.user_middleware  # List of Middleware objects (outermost)
+            + [Middleware(ServerErrorMiddleware, handler=error_handler, debug=self.debug)]
+            + [Middleware(ExceptionMiddleware, handlers=exception_handlers)]
+        )
+
+        # Start with router as innermost layer
+        async def router_handler(request: LambdaRequest) -> Response:
+            return await self.router.route(request)
+
+        app: Callable[[LambdaRequest], Awaitable[Response]] = router_handler
+
+        # Wrap with middleware stack (reverse order - LIFO)
+        # FastAPI pattern: for cls, args, kwargs in reversed(middleware)
+        for cls, args, kwargs in reversed(middleware):
+            app = cls(app, *args, **kwargs)  # type: ignore[misc, call-arg]
+
+        return app
 
     def get(self, path: str, **kwargs: Any) -> Callable:
         """Register GET endpoint."""
@@ -140,53 +194,6 @@ class FastAPI:
             methods=["GET"],
             include_in_schema=False,
         )
-
-    def build_middleware_stack(self) -> Callable[[LambdaRequest], Awaitable[Response]]:
-        """
-        Build middleware stack matching FastAPI/Starlette pattern.
-
-        Stack order:
-        User Middleware (CORS, logging, auth, etc.)
-          → ServerErrorMiddleware (catches 500)
-            → ExceptionMiddleware (innermost - handles HTTPException)
-              → Router
-
-        Note: User middleware is outermost to ensure CORS headers are added
-        even on 500 errors. ServerError catches exceptions and returns response,
-        which then flows back through user middleware post-processing.
-
-        Inspired by: fastapi.applications.FastAPI.build_middleware_stack()
-        """
-
-        # Separate error handler (500/Exception) from exception handlers
-        error_handler = None
-        exception_handlers: Dict[Any, Callable] = {}
-
-        for key, value in self.exception_handlers.items():
-            if key in (500, Exception):
-                error_handler = value
-            else:
-                exception_handlers[key] = value
-
-        # Build middleware list: user + system + system (FastAPI pattern)
-        middleware = (
-            self.user_middleware  # List of Middleware objects (outermost)
-            + [Middleware(ServerErrorMiddleware, handler=error_handler, debug=self.debug)]
-            + [Middleware(ExceptionMiddleware, handlers=exception_handlers)]
-        )
-
-        # Start with router as innermost layer
-        async def router_handler(request: LambdaRequest) -> Response:
-            return await self.router.route(request)
-
-        app: Callable[[LambdaRequest], Awaitable[Response]] = router_handler
-
-        # Wrap with middleware stack (reverse order - LIFO)
-        # FastAPI pattern: for cls, args, kwargs in reversed(middleware)
-        for cls, args, kwargs in reversed(middleware):
-            app = cls(app, *args, **kwargs)  # type: ignore[misc, call-arg]
-
-        return app
 
     async def __call__(
         self,
