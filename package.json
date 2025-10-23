@@ -1,15 +1,16 @@
 {
   "scripts": {
     "test": "poetry run pytest tests -v -k 'not e2e'",
-    "test:cov": "poetry run pytest tests/ --cov=fastapi_lambda --cov-report=term-missing --cov-report=html -k 'not e2e'",
+    "test:cov": "source config.sh && test",
     "test:e2e": "poetry run pytest tests/e2e/ -v",
     "test:e2e:setup": "cd tests/e2e && cp -r ../../fastapi_lambda ./sample_lambda/ && serverless deploy && rm -rf ./sample_lambda/fastapi_lambda",
     "vulture": "poetry run vulture fastapi_lambda/ --min-confidence 50 --sort-by-size | head -500",
-    "typecheck": "poetry run pyright",
-    "lint": "poetry run flake8",
+    "typecheck": "source config.sh && typecheck",
+    "lint": "source config.sh && lint",
     "format": "poetry run black fastapi_lambda/ tests/",
     "format:check": "poetry run black --check fastapi_lambda/ tests/",
-    "htmlcov": "open htmlcov/index.html"
+    "htmlcov": "open htmlcov/index.html",
+    "check": "source config.sh && check"
   },
   "devDependencies": {
     "serverless": "^3.40.0",

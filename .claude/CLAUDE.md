@@ -159,42 +159,35 @@ def send_email(background_tasks: BackgroundTasks):
 - **Mandatory test coverage** for all new code
 - Target: >80% coverage (currently 83%)
 - Test edge cases and error paths
-- **Always use `npm run test:cov`** for fast iterations (auto-excludes e2e tests)
 - E2E tests require AWS deployment: use `npm run test:e2e` when needed
 
-### Code Quality Tools
+### Development Workflow
 
-**Static Analysis:**
-- **vulture** - Dead code detection
-- **mypy** - Type checking
-- **Pylance** - VS Code type analysis
+**Single Check Command:**
+Use the unified `check` pipeline for all local development iterations:
 
-**Testing:**
-- **pytest** - Test framework
-- **pytest-cov** - Coverage reporting
-- **pytest-asyncio** - Async test support
+```bash
+source config.sh && check
+```
+
+This runs in sequence:
+1. **Type checking** (pyright)
+2. **Linting** (flake8)
+3. **Tests with coverage** (pytest, excludes e2e)
+
+Stops on first failure. Only use this command - do not run individual checks separately.
+
+**Code Quality Tools:**
+- **pyright** - Type checking (strict mode)
+- **flake8** - Linting
+- **pytest** - Test framework with coverage
+- **vulture** - Dead code detection (manual use only)
 
 **Coverage Importance:**
 - Coverage is a **critical metric** for code health
 - Minimum 80% coverage required for production
 - 100% coverage for critical paths (DI, validation, OpenAPI)
 - Use coverage to identify dead code and untested edge cases
-
-**Example workflow:**
-
-```bash
-# Run tests with coverage (excludes e2e)
-npm run test:cov
-
-# Find dead code
-npm run vulture
-
-# Type checking
-npm run typecheck
-
-# E2E tests (requires AWS deployment)
-npm run test:e2e
-```
 
 ## Removed Features (Lambda Incompatible)
 
@@ -265,24 +258,6 @@ Test categories:
 - Remove old post-routing middleware loop
 
 #### Phase 3: CORS Rewrite (`cors.py`)
-Convert from `process_request(request, response)` to:
-```python
-class CORSMiddleware:
-    def __init__(self, app: Callable, **options):
-        self.app = app  # Next layer in stack
-
-    async def __call__(self, request: LambdaRequest) -> LambdaResponse:
-        # PRE: Handle preflight (short-circuit)
-        if is_preflight(request):
-            return preflight_response()
-
-        # CALL NEXT: Execute handler
-        response = await self.app(request)
-
-        # POST: Add CORS headers
-        add_cors_headers(response)
-        return response
-```
 
 #### Phase 4: Verify Compatibility
 - All 19 existing CORS tests must pass unchanged
@@ -363,17 +338,6 @@ app.add_middleware(C)  # Outermost
   - [ ] ARCHITECTURE.md - stack diagram
   - [ ] This file - mark as complete
 
-### Estimated Timeline
-- Phase 1: 3 hours (test-first approach)
-- Phase 2: 2 hours (core refactor)
-- Phase 3: 1 hour (CORS rewrite)
-- Phase 4: 0.5 hours (verification)
-- Phase 5: 2 hours (APIRouter)
-- Phase 6: 1.5 hours (APIRouter tests)
-- Phase 7: 1 hour (docs)
-
-**Total: ~11 hours**
-
 ---
 
 ## Future implementations
@@ -445,25 +409,3 @@ app.add_middleware(C)  # Outermost
   - ✅ Published: https://pypi.org/project/fastapi-lambda/
   - ✅ MIT License with proper FastAPI attribution
   - ✅ Complete package metadata
-
-### Community & Outreach
-- [ ] Share on Twitter/X with FastAPI community tag
-- [ ] Post on Reddit
-  - [ ] r/Python - Share as "Show & Tell"
-  - [ ] r/aws - AWS Lambda optimization angle
-  - [ ] r/FastAPI (if exists) or FastAPI Discord
-- [ ] Write blog post on Dev.to or Hashnode
-  - Topic: "FastAPI for Lambda: <500ms Cold Starts"
-  - Include performance benchmarks vs standard FastAPI
-- [ ] Create example projects showcasing different use cases
-- [ ] Contribute to awesome-fastapi list (if accepted)
-
-### Documentation & Examples
-- [ ] Add an `examples/` folder with minimal sample projects
-  - [ ] Basic CRUD API
-  - [ ] JWT authentication example
-  - [ ] Multi-function Lambda deployment
-- [ ] Write a concise doc detailing unsupported FastAPI features and rationale (e.g., WebSockets, forms, background tasks)
-- [x] Add PyPI and CI badges to `README.md`
-- [ ] Add coverage badge when Codecov is set up
-- [ ] Add an architecture diagram in this document (`CLAUDE.md`) showing class/function interactions
