@@ -10,9 +10,27 @@ from typing import Awaitable, Callable, List
 import pytest
 
 from fastapi_lambda import FastAPI, status
+
+# from fastapi_lambda.middleware.base import BaseHTTPMiddleware
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import JSONResponse, Response
 from tests.utils import make_event
+
+# Todo implement starlette compatible BaseHTTPMiddleware tests https://github.com/Kludex/starlette/blob/7e4b7428f273dbdc875dcd036d20804bcfc7b2ee/starlette/middleware/base.py#L96
+# class RequestCounterMiddleware(BaseHTTPMiddleware):
+#     """Demonstration of a simple middleware that counts requests."""
+
+#     def __init__(self, app):
+#         super().__init__(app)
+#         self.count = 0
+
+#     async def dispatch(self, request, call_next):
+#         # Get the client's IP address
+#         client_ip = request.client.host
+#         print(f"Request from IP: {client_ip}")
+#         self.count += 1
+#         response = await call_next(request)
+#         return response
 
 
 class LoggingMiddleware:
@@ -38,6 +56,7 @@ class AuthMiddleware:
 
     def __init__(
         self,
+        # TODO check if original fastapi call app fn or other signature https://github.com/fastapi/fastapi/discussions/7691#discussioncomment-5143286
         app: Callable[[LambdaRequest], Awaitable[Response]],
         logs: List[str],
     ):

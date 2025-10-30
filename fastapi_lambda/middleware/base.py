@@ -10,6 +10,7 @@ from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import Response
 
 
+# TODO adapt the interface: see https://github.com/Kludex/starlette/blob/7e4b7428f273dbdc875dcd036d20804bcfc7b2ee/starlette/middleware/base.py#L96
 class BaseHTTPMiddleware:
     """
     Base class for HTTP middleware using function dispatch pattern.
