@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from fastapi_lambda import FastAPI, JSONResponse, LambdaEvent
 from fastapi_lambda.middleware.cors import CORSMiddleware
+from fastapi_lambda.types import LambdaResponse
 
 
 class Item(BaseModel):
@@ -76,7 +77,7 @@ async def create_item(item: Item) -> ItemResponse:
     return ItemResponse(id=42, name=item.name, price=item.price)
 
 
-def handler(event: LambdaEvent, context) -> dict:
+def handler(event: LambdaEvent, context) -> LambdaResponse:
     """Lambda handler for API Gateway events."""
     import asyncio
 

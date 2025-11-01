@@ -5,8 +5,11 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel
 
-from fastapi_lambda.app import FastAPI
+from fastapi_lambda.applications import FastAPI
+from fastapi_lambda.param_functions import Body, Query
+from fastapi_lambda.params import Depends
 from tests.conftest import parse_response
+from tests.utils import make_event
 
 
 class Item(BaseModel):
@@ -22,7 +25,7 @@ class ItemResponse(BaseModel):
 
 
 @pytest.mark.asyncio
-async def test_request_body_validation(make_event, lambda_context):
+async def test_request_body_validation():
     """Test request body validation with Pydantic."""
     app = FastAPI()
 
@@ -31,8 +34,8 @@ async def test_request_body_validation(make_event, lambda_context):
         return {"name": item.name, "price": item.price}
 
     # Valid body
-    event = make_event("POST", "/items", body={"name": "Widget", "price": 9.99})
-    response = await app(event, lambda_context)
+    event = make_event(method="POST", path="/items", body={"name": "Widget", "price": 9.99})
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -41,7 +44,7 @@ async def test_request_body_validation(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_validation_error_422(make_event, lambda_context):
+async def test_validation_error_422():
     """Test validation error returns 422."""
     app = FastAPI()
 
@@ -50,8 +53,8 @@ async def test_validation_error_422(make_event, lambda_context):
         return {"ok": True}
 
     # Invalid body (missing required fields)
-    event = make_event("POST", "/items", body={"invalid": "data"})
-    response = await app(event, lambda_context)
+    event = make_event(method="POST", path="/items", body={"invalid": "data"})
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 422
@@ -59,7 +62,7 @@ async def test_validation_error_422(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_response_model_serialization(make_event, lambda_context):
+async def test_response_model_serialization():
     """Test response model serialization."""
     app = FastAPI()
 
@@ -73,8 +76,8 @@ async def test_response_model_serialization(make_event, lambda_context):
             "secret": "should_not_appear",  # Extra field
         }
 
-    event = make_event("GET", "/items/1", path_params={"item_id": "1"})
-    response = await app(event, lambda_context)
+    event = make_event(method="GET", path="/items/1", path_params={"item_id": "1"})
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -86,7 +89,7 @@ async def test_response_model_serialization(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_optional_fields(make_event, lambda_context):
+async def test_optional_fields():
     """Test optional fields in Pydantic models."""
     app = FastAPI()
 
@@ -95,8 +98,8 @@ async def test_optional_fields(make_event, lambda_context):
         return {"name": item.name, "has_description": item.description is not None}
 
     # Without optional field
-    event = make_event("POST", "/items", body={"name": "Widget", "price": 9.99})
-    response = await app(event, lambda_context)
+    event = make_event(method="POST", path="/items", body={"name": "Widget", "price": 9.99})
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -104,11 +107,11 @@ async def test_optional_fields(make_event, lambda_context):
 
     # With optional field
     event = make_event(
-        "POST",
-        "/items",
+        method="POST",
+        path="/items",
         body={"name": "Widget", "price": 9.99, "description": "A nice widget"},
     )
-    response = await app(event, lambda_context)
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
@@ -116,7 +119,7 @@ async def test_optional_fields(make_event, lambda_context):
 
 
 @pytest.mark.asyncio
-async def test_type_coercion(make_event, lambda_context):
+async def test_type_coercion():
     """Test Pydantic type coercion."""
     app = FastAPI()
 
@@ -124,11 +127,60 @@ async def test_type_coercion(make_event, lambda_context):
     async def get_item(item_id: int):
         return {"item_id": item_id, "type": type(item_id).__name__}
 
-    # String "42" should be coerced to int 42
-    event = make_event("GET", "/items/42", path_params={"item_id": "42"})
-    response = await app(event, lambda_context)
+    event = make_event(method="GET", path="/items/42", path_params={"item_id": "42"})
+    response = await app(event)
 
     status, body = parse_response(response)
     assert status == 200
     assert body["item_id"] == 42
     assert body["type"] == "int"
+
+
+@pytest.mark.asyncio
+async def test_query_with_examples():
+    """Test Query parameter with examples."""
+
+    app = FastAPI()
+
+    @app.get("/search")
+    async def search(q: str = Query(examples=[{"example1": "test"}])):
+        return {"query": q}
+
+    event = make_event(method="GET", path="/search", query={"q": "hello"})
+    response = await app(event)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["query"] == "hello"
+
+
+@pytest.mark.asyncio
+async def test_body_with_examples():
+    """Test Body parameter with examples."""
+
+    app = FastAPI()
+
+    @app.post("/items")
+    async def create_item(name: str = Body(examples=["widget", "gadget"])):
+        return {"name": name}
+
+    event = make_event(method="POST", path="/items", body="test_name")
+    response = await app(event)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["name"] == "test_name"
+
+
+@pytest.mark.asyncio
+async def test_depends_repr():
+    """Test Depends __repr__ for coverage."""
+
+    async def my_dep():
+        return 42
+
+    dep = Depends(my_dep)
+    assert "my_dep" in repr(dep)
+
+    dep_no_cache = Depends(my_dep, use_cache=False)
+    assert "use_cache=False" in repr(dep_no_cache)

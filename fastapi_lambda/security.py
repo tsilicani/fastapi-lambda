@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from typing_extensions import Annotated, Doc
 
 from fastapi_lambda.exceptions import HTTPException
-from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.requests import LambdaRequest
 
 
 def get_authorization_scheme_param(

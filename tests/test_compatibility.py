@@ -39,7 +39,7 @@ def test_add_middleware_interface():
     )
 
     # Verify middleware was added
-    assert len(app._middleware) == 1
+    assert len(app.user_middleware) == 1
 
 
 def test_parameter_functions_import():
@@ -126,8 +126,15 @@ def test_cors_middleware_parameters():
     """Test that CORSMiddleware accepts all standard parameters."""
     from fastapi_lambda.middleware.cors import CORSMiddleware
 
+    # Mock app callable
+    async def mock_app(request):
+        from fastapi_lambda.response import JSONResponse
+
+        return JSONResponse({"message": "ok"})
+
     # All these parameters should work
     middleware = CORSMiddleware(
+        mock_app,
         allow_origins=["https://example.com"],
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
@@ -170,7 +177,7 @@ def test_drop_in_replacement_example():
 
     # Verify everything was set up correctly
     assert len(app.router.routes) > 0
-    assert len(app._middleware) == 1
+    assert len(app.user_middleware) == 1
 
 
 def test_import_compatibility():

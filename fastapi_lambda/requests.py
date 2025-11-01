@@ -2,12 +2,14 @@
 Lambda-native Request class.
 
 Replaces starlette.requests.Request which depends on ASGI scope/receive/send.
+Original: https://github.com/encode/starlette/blob/master/starlette/requests.py
 """
 
 import json
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qs
 
+from fastapi_lambda.datastructures import Address
 from fastapi_lambda.types import LambdaEvent
 
 
@@ -22,10 +24,11 @@ class LambdaRequest:
         self._event = event
         self._body: Optional[bytes] = None
         self._json: Any = None
+        self._client: Optional[Address] = None
 
     @property
     def method(self) -> str:
-        """HTTP method (GET, POST, etc.)."""
+        """HTTP method"""
         # Case v1
         if "httpMethod" in self._event:
             return self._event["httpMethod"].upper()
@@ -68,6 +71,16 @@ class LambdaRequest:
         """Path parameters from route matching."""
         return self._event.get("pathParameters") or {}
 
+    @property
+    def client(self) -> Address:
+        """Client address (host and port) - compatible with Starlette."""
+        if self._client is None:
+            ctx = self._event.get("requestContext", {})
+            # Try v2/Lambda URL (http.sourceIp) or v1 (identity.sourceIp)
+            source_ip = ctx.get("http", {}).get("sourceIp") or ctx.get("identity", {}).get("sourceIp")
+            self._client = Address(source_ip, 0)
+        return self._client
+
     async def body(self) -> bytes:
         """Request body as bytes."""
         if self._body is None:
@@ -89,14 +102,3 @@ class LambdaRequest:
             else:
                 self._json = None
         return self._json
-
-    @property
-    def client_ip(self) -> Optional[str]:
-        """Client IP address."""
-        identity = self._event.get("requestContext", {}).get("identity", {})
-        return identity.get("sourceIp")
-
-    @property
-    def request_id(self) -> str:
-        """API Gateway request ID."""
-        return self._event.get("requestContext", {}).get("requestId", "")

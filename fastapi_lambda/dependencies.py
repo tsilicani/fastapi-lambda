@@ -27,6 +27,8 @@ from typing import (
 )
 
 from pydantic import BaseModel
+from pydantic._internal._typing_extra import eval_type_lenient as evaluate_forwardref
+from pydantic._internal._utils import lenient_issubclass
 from pydantic.fields import FieldInfo
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -38,14 +40,11 @@ from fastapi_lambda._compat import (
     Undefined,
     _regenerate_error_with_loc,
     copy_field_info,
-    evaluate_forwardref,
     field_annotation_is_scalar,
-    get_annotation_from_field_info,
     get_missing_field_error,
     is_scalar_field,
-    lenient_issubclass,
 )
-from fastapi_lambda.request import LambdaRequest
+from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.security import SecurityBase
 from fastapi_lambda.utils import create_model_field
 
@@ -84,7 +83,7 @@ class Dependant:
 if sys.version_info >= (3, 13):
     from inspect import iscoroutinefunction
 else:
-    from asyncio import iscoroutinefunction
+    from asyncio import iscoroutinefunction  # pragma: no cover
 
 
 def is_coroutine_callable(call: Callable[..., Any]) -> bool:
@@ -290,10 +289,7 @@ def analyze_param(
         elif isinstance(field_info, params.Param) and getattr(field_info, "in_", None) is None:
             field_info.in_ = params.ParamTypes.query
 
-        use_annotation_from_field_info = get_annotation_from_field_info(
-            use_annotation,
-            field_info,
-        )
+        use_annotation_from_field_info = use_annotation
 
         if not field_info.alias and getattr(field_info, "convert_underscores", None):
             alias = param_name.replace("_", "-")
@@ -558,7 +554,7 @@ def _validate_value_with_model_field(
         if field.required:
             return None, [get_missing_field_error(loc=loc)]
         else:
-            return deepcopy(field.default), []
+            return deepcopy(field.get_default()), []
 
     v_, errors_ = field.validate(value, values, loc=loc)
 
@@ -590,9 +586,11 @@ def extract_params_from_dict(
 
     # Single Pydantic model as param
     if len(fields) == 1 and lenient_issubclass(first_field.type_, BaseModel):
-        from fastapi_lambda._compat import get_cached_model_fields
+        from fastapi_lambda._compat import ModelField
 
-        fields_to_extract = get_cached_model_fields(first_field.type_)
+        fields_to_extract = [
+            ModelField(field_info=field_info, name=name) for name, field_info in first_field.type_.model_fields.items()
+        ]
         single_not_embedded_field = True
     else:
         fields_to_extract = fields
