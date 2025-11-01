@@ -8,7 +8,7 @@ from typing import cast
 from fastapi_lambda.applications import FastAPI, create_lambda_handler
 from fastapi_lambda.exceptions import FastAPIError
 from fastapi_lambda.response import Response
-from fastapi_lambda.router import Convertor
+from fastapi_lambda.routing import Convertor
 from fastapi_lambda.types import HttpMethod
 from tests.conftest import parse_response
 from tests.utils import make_event
