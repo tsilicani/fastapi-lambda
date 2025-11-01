@@ -29,7 +29,8 @@
       "Bash(npm run test:cov:*)",
       "Bash(npm run typecheck:*)",
       "Bash(source config.sh)",
-      "Bash(check:*)"
+      "Bash(check:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []
