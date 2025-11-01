@@ -168,7 +168,7 @@ def test_openapi_validation_error_response():
 
 def test_openapi_tags():
     """Test tags appear in schema."""
-    app = FastAPI(tags=[{"name": "items", "description": "Item operations"}])
+    app = FastAPI(openapi_tags=[{"name": "items", "description": "Item operations"}])
 
     @app.get("/items", tags=["items"])
     async def list_items():

@@ -23,12 +23,12 @@ from fastapi_lambda.middleware.exceptions import ExceptionMiddleware
 from fastapi_lambda.openapi_schema import get_openapi_schema
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import Response
-from fastapi_lambda.routing import LambdaRouter
+from fastapi_lambda.routing import APIRouter
 from fastapi_lambda.types import DecoratedCallable, LambdaEvent, RequestHandler
 from fastapi_lambda.types import LambdaResponse as LambdaResponseDict
 
 
-class FastAPI:
+class FastAPI(APIRouter):
     """
     Lambda-native FastAPI application.
 
@@ -43,32 +43,30 @@ class FastAPI:
         debug: bool = False,
         openapi_url: Optional[str] = "/openapi.json",
         docs_url: Optional[str] = None,
-        tags: Optional[List[Dict[str, Any]]] = None,
+        openapi_tags: Optional[List[Dict[str, Any]]] = None,
         servers: Optional[List[Dict[str, str]]] = None,
         exception_handlers: Optional[Dict[Any, Callable]] = None,
         middleware: Optional[Sequence[Middleware]] = None,
     ):
+        super().__init__()
+
         self.title = title
         self.version = version
         self.description = description
         self.debug = debug
         self.openapi_url = openapi_url
         self.docs_url = docs_url
-        self.tags = tags
+        self.openapi_tags = openapi_tags
         self.servers = servers
-        self.router = LambdaRouter()
         self._openapi_schema: Optional[Dict[str, Any]] = None
 
-        # Exception handlers (FastAPI pattern)
         self.exception_handlers: Dict[Any, Callable] = {}
         if exception_handlers:
             self.exception_handlers.update(exception_handlers)
 
-        # Middleware stack (lazy-built on first request)
         self.user_middleware: List[Middleware] = [] if middleware is None else list(middleware)
         self._middleware_stack: Optional[RequestHandler] = None
 
-        # Register OpenAPI endpoint if enabled
         if self.openapi_url:
             self._register_openapi_route()
 
@@ -80,9 +78,11 @@ class FastAPI:
         self.user_middleware.insert(0, Middleware(middleware_class, **options))
 
     def middleware(
-        self, _middleware_type: Literal["http"] = "http"
+        self, middleware_type: Literal["http"] = "http"
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         """Decorator to add middleware to the stack, placing it as the outermost layer."""
+        if middleware_type != "http":
+            raise ValueError(f"Unsupported middleware type: {middleware_type}")
 
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
             self.add_middleware(BaseHTTPMiddleware, dispatch=func)
@@ -124,9 +124,8 @@ class FastAPI:
             + [Middleware(ExceptionMiddleware, handlers=exception_handlers)]
         )
 
-        # Start with router as innermost layer
         async def router_handler(request: LambdaRequest) -> Response:
-            return await self.router.route(request)
+            return await self.route(request)
 
         app: RequestHandler = router_handler
 
@@ -137,36 +136,6 @@ class FastAPI:
 
         return app
 
-    def get(self, path: str, **kwargs: Any) -> Callable:
-        """Register GET endpoint."""
-        return self.router.get(path, **kwargs)
-
-    def post(self, path: str, **kwargs: Any) -> Callable:
-        """Register POST endpoint."""
-        return self.router.post(path, **kwargs)
-
-    def put(self, path: str, **kwargs: Any) -> Callable:
-        """Register PUT endpoint."""
-        return self.router.put(path, **kwargs)
-
-    def delete(self, path: str, **kwargs: Any) -> Callable:
-        """Register DELETE endpoint."""
-        return self.router.delete(path, **kwargs)
-
-    def patch(self, path: str, **kwargs: Any) -> Callable:
-        """Register PATCH endpoint."""
-        return self.router.patch(path, **kwargs)
-
-    def add_route(
-        self,
-        path: str,
-        endpoint: Callable,
-        methods: List[str],
-        **kwargs: Any,
-    ) -> None:
-        """Add a route directly."""
-        self.router.add_route(path, endpoint, methods, **kwargs)
-
     def openapi(self) -> Dict[str, Any]:
         "Generate and cache OpenAPI schema."
         if self._openapi_schema is None:
@@ -174,8 +143,8 @@ class FastAPI:
                 title=self.title,
                 version=self.version,
                 description=self.description,
-                routes=self.router.routes,
-                tags=self.tags,
+                routes=self.routes,
+                tags=self.openapi_tags,
                 servers=self.servers,
             )
         return self._openapi_schema
@@ -187,7 +156,7 @@ class FastAPI:
             return self.openapi()
 
         assert self.openapi_url is not None, "OpenAPI URL must be set"
-        self.router.add_route(
+        self.add_route(
             path=self.openapi_url,
             endpoint=openapi_endpoint,
             methods=["GET"],

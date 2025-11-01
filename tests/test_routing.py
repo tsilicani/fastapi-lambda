@@ -8,7 +8,7 @@ from typing import cast
 from fastapi_lambda.applications import FastAPI, create_lambda_handler
 from fastapi_lambda.exceptions import FastAPIError
 from fastapi_lambda.response import Response
-from fastapi_lambda.routing import Convertor
+from fastapi_lambda.routing import APIRouter, Convertor
 from fastapi_lambda.types import HttpMethod
 from tests.conftest import parse_response
 from tests.utils import make_event
@@ -308,9 +308,146 @@ def test_invalid_response_model():
 
     app = FastAPI()
 
-    # Try to use Response as response_model (invalid - it's not a Pydantic model)
     with pytest.raises(FastAPIError, match="Invalid args for response field"):
 
         @app.get("/invalid", response_model=Response)  # type: ignore
         async def invalid_endpoint():
             return {"data": "test"}
+
+
+@pytest.mark.asyncio
+async def test_api_router_with_prefix():
+    """Test APIRouter with prefix."""
+    app = FastAPI()
+    router = APIRouter(prefix="/api/v1")
+
+    @router.get("/items")
+    async def get_items():
+        return {"items": []}
+
+    app.include_router(router)
+
+    event = make_event(method="GET", path="/api/v1/items")
+    response = await app(event)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["items"] == []
+
+
+@pytest.mark.asyncio
+async def test_api_router_with_tags():
+    """Test APIRouter with tags."""
+    app = FastAPI()
+    router = APIRouter(tags=["items"])
+
+    @router.get("/items")
+    async def get_items():
+        return {"items": []}
+
+    app.include_router(router)
+
+    assert len(app.routes) == 2
+    items_route = next(r for r in app.routes if r.path == "/items")
+    assert items_route.tags == ["items"]
+
+
+@pytest.mark.asyncio
+async def test_include_router_basic():
+    """Test include_router basic functionality."""
+    app = FastAPI()
+    router = APIRouter()
+
+    @router.get("/hello")
+    async def hello():
+        return {"message": "hello"}
+
+    app.include_router(router)
+
+    event = make_event(method="GET", path="/hello")
+    response = await app(event)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["message"] == "hello"
+
+
+@pytest.mark.asyncio
+async def test_include_router_with_prefix():
+    """Test include_router with prefix parameter."""
+    app = FastAPI()
+    router = APIRouter()
+
+    @router.get("/users")
+    async def get_users():
+        return {"users": []}
+
+    app.include_router(router, prefix="/api")
+
+    event = make_event(method="GET", path="/api/users")
+    response = await app(event)
+
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["users"] == []
+
+
+@pytest.mark.asyncio
+async def test_include_router_with_tags():
+    """Test include_router merging tags."""
+    app = FastAPI()
+    router = APIRouter(tags=["router-tag"])
+
+    @router.get("/items")
+    async def get_items():
+        return {}
+
+    app.include_router(router, tags=["app-tag"])
+
+    items_route = next(r for r in app.routes if r.path == "/items")
+    assert items_route.tags is not None
+    assert "app-tag" in items_route.tags
+    assert "router-tag" in items_route.tags
+
+
+@pytest.mark.asyncio
+async def test_nested_routers():
+    """Test nested routers (router including another router)."""
+    app = FastAPI()
+    router_v1 = APIRouter(prefix="/v1")
+    router_items = APIRouter(prefix="/items", tags=["items"])
+
+    @router_items.get("/")
+    async def get_items():
+        return {"items": []}
+
+    @router_items.get("/{item_id}")
+    async def get_item(item_id: int):
+        return {"item_id": item_id}
+
+    router_v1.include_router(router_items)
+    app.include_router(router_v1, prefix="/api")
+
+    event = make_event(method="GET", path="/api/v1/items/")
+    response = await app(event)
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["items"] == []
+
+    event = make_event(method="GET", path="/api/v1/items/42", path_params={"item_id": "42"})
+    response = await app(event)
+    status, body = parse_response(response)
+    assert status == 200
+    assert body["item_id"] == 42
+
+
+def test_include_router_invalid_prefix():
+    """Test that include_router validates prefix format."""
+    app = FastAPI()
+    router = APIRouter()
+
+    with pytest.raises(ValueError, match="must start with"):
+        app.include_router(router, prefix="invalid")
+
+    with pytest.raises(ValueError, match="must not end with"):
+        app.include_router(router, prefix="/invalid/")

@@ -230,7 +230,7 @@ class TestFieldAnnotationIsComplex:
             return {"limit": limit}
 
         # Verify route is created
-        items_route = [r for r in app.router.routes if r.path == "/items"][0]
+        items_route = [r for r in app.routes if r.path == "/items"][0]
         assert items_route is not None
 
         # During route setup, dependencies.py:278 calls field_annotation_is_scalar

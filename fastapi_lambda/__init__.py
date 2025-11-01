@@ -9,6 +9,7 @@ from fastapi_lambda.response import JSONResponse as JSONResponse
 from fastapi_lambda.response import PlainTextResponse as PlainTextResponse
 from fastapi_lambda.response import RedirectResponse as RedirectResponse
 from fastapi_lambda.response import Response as Response
+from fastapi_lambda.routing import APIRouter as APIRouter
 
 from .applications import LambdaEvent as LambdaEvent
 from .applications import create_lambda_handler as create_lambda_handler

@@ -98,7 +98,7 @@ def test_decorator_methods():
     def test_endpoint():
         return {"message": "test"}
 
-    assert len(app.router.routes) > 0
+    assert len(app.routes) > 0
 
 
 def test_fastapi_init_parameters():
@@ -176,7 +176,7 @@ def test_drop_in_replacement_example():
         return {"items": []}
 
     # Verify everything was set up correctly
-    assert len(app.router.routes) > 0
+    assert len(app.routes) > 0
     assert len(app.user_middleware) == 1
 
 

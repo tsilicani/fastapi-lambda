@@ -239,14 +239,28 @@ class Route:
         return JSONResponse(result)
 
 
-class LambdaRouter:
+class APIRouter:
     """
-    Lambda-native router.
+    Lambda-native router matching FastAPI's APIRouter interface.
 
     Replaces Starlette's Router - no ASGI scope/receive/send.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        prefix: str = "",
+        tags: Optional[List[str]] = None,
+        dependencies: Optional[List[Any]] = None,
+        responses: Optional[Dict[int, Dict[str, Any]]] = None,
+        deprecated: Optional[bool] = None,
+        include_in_schema: bool = True,
+    ):
+        self.prefix = prefix.rstrip("/")  # Remove trailing slash
+        self.tags = tags or []
+        self.dependencies = dependencies or []
+        self.responses = responses or {}
+        self.deprecated = deprecated
+        self.include_in_schema = include_in_schema
         self.routes: List[Route] = []
 
     def add_route(
@@ -264,20 +278,26 @@ class LambdaRouter:
         operation_id: Optional[str] = None,
         responses: Optional[Dict[int, Dict[str, Any]]] = None,
     ) -> None:
-        """Add a route to the router."""
+        """Add route with merged router-level and route-level configs."""
+        full_path = self.prefix + path
+        merged_tags = list(self.tags) + (tags or [])
+        merged_responses = {**self.responses, **(responses or {})}
+        final_deprecated = deprecated if deprecated is not None else self.deprecated
+        final_include_in_schema = include_in_schema and self.include_in_schema
+
         route = Route(
-            path=path,
+            path=full_path,
             endpoint=endpoint,
             methods=methods,
             name=name,
-            include_in_schema=include_in_schema,
+            include_in_schema=final_include_in_schema,
             response_model=response_model,
-            tags=tags,
+            tags=merged_tags if merged_tags else None,
             summary=summary,
             description=description,
-            deprecated=deprecated,
+            deprecated=final_deprecated,
             operation_id=operation_id,
-            responses=responses,
+            responses=merged_responses if merged_responses else None,
         )
         self.routes.append(route)
 
@@ -325,6 +345,49 @@ class LambdaRouter:
             return func
 
         return decorator
+
+    def include_router(
+        self,
+        router: "APIRouter",
+        prefix: str = "",
+        tags: Optional[List[str]] = None,
+        responses: Optional[Dict[int, Dict[str, Any]]] = None,
+        deprecated: Optional[bool] = None,
+        include_in_schema: bool = True,
+    ) -> None:
+        """Include another router's routes with optional prefix and config merging."""
+        if prefix:
+            if not prefix.startswith("/"):
+                raise ValueError("Router prefix must start with '/'")
+            if prefix.endswith("/"):
+                raise ValueError("Router prefix must not end with '/'")
+
+        merged_tags = list(self.tags) + (tags or []) + router.tags
+        merged_responses = {**self.responses, **(responses or {}), **router.responses}
+        final_deprecated = deprecated if deprecated is not None else router.deprecated
+        final_include_in_schema = include_in_schema and router.include_in_schema
+
+        for route in router.routes:
+            if prefix:
+                final_path = self.prefix + prefix + route.path
+            else:
+                final_path = self.prefix + route.path
+
+            new_route = Route(
+                path=final_path,
+                endpoint=route.endpoint,
+                methods=route.methods,
+                name=route.name,
+                include_in_schema=final_include_in_schema and route.include_in_schema,
+                response_model=route.response_model,
+                tags=merged_tags if merged_tags else None,
+                summary=route.summary,
+                description=route.description,
+                deprecated=final_deprecated or route.deprecated,
+                operation_id=route.operation_id,
+                responses={**merged_responses, **(route.responses or {})},
+            )
+            self.routes.append(new_route)
 
     async def route(self, request: LambdaRequest) -> Response:
         """
