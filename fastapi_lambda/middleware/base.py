@@ -4,35 +4,22 @@ Middleware wrapper for lazy instantiation.
 Inspired by: starlette.middleware.Middleware
 """
 
-from typing import Any, Awaitable, Callable, Iterator, Type
+from typing import Any, Awaitable, Callable, Iterator, Optional, Type
 
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import Response
 
 
-# TODO adapt the interface: see https://github.com/Kludex/starlette/blob/7e4b7428f273dbdc875dcd036d20804bcfc7b2ee/starlette/middleware/base.py#L96
 class BaseHTTPMiddleware:
-    """
-    Base class for HTTP middleware using function dispatch pattern.
-
-    Wraps async functions with signature: (request, call_next) -> response
-    Matches FastAPI/Starlette BaseHTTPMiddleware behavior (Lambda-native).
-
-    Example:
-        @app.middleware("http")
-        async def add_header(request: Request, call_next):
-            response = await call_next(request)
-            response.headers["X-Custom"] = "value"
-            return response
-    """
+    """Base class for Middleware."""
 
     def __init__(
         self,
         app: Callable[[LambdaRequest], Awaitable[Response]],
-        dispatch: Callable[[LambdaRequest, Callable], Awaitable[Response]],
+        dispatch: Optional[Callable[[LambdaRequest, Callable], Awaitable[Response]]] = None,
     ):
         self.app = app
-        self.dispatch = dispatch
+        self.dispatch_func = self.dispatch if dispatch is None else dispatch
 
     async def __call__(self, request: LambdaRequest) -> Response:
         """Execute middleware with call_next pattern."""
@@ -40,7 +27,12 @@ class BaseHTTPMiddleware:
         async def call_next(req: LambdaRequest) -> Response:
             return await self.app(req)
 
-        return await self.dispatch(request, call_next)
+        return await self.dispatch_func(request, call_next)
+
+    async def dispatch(
+        self, request: LambdaRequest, call_next: Callable[[LambdaRequest], Awaitable[Response]]
+    ) -> Response:
+        raise NotImplementedError()  # pragma: no cover
 
 
 class Middleware:
