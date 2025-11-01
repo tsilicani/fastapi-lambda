@@ -32,14 +32,33 @@ jobs:
         run: |
           poetry run pytest tests/ --cov=fastapi_lambda --cov-report=term-missing -k 'not e2e'
 
+  bump-version:
+    name: Auto-increment Version
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run version bump script
+        run: |
+          bash .github/scripts/bump-version.sh
+
   publish:
     name: Build and Publish to PyPI
-    needs: test
+    needs: bump-version
     runs-on: ubuntu-latest
     permissions:
       contents: write # Needed for creating releases
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: release
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -77,5 +96,10 @@ jobs:
           draft: false
           prerelease: true
           generate_release_notes: true
+          body: |
+            ## What's Changed
+            Auto-generated release for version ${{ steps.get_version.outputs.version }}
+
+            See full changelog at https://github.com/${{ github.repository }}/compare/v${{ steps.get_version.outputs.version }}...HEAD
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

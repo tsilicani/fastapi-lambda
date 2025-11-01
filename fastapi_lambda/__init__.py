@@ -20,4 +20,4 @@ from .param_functions import Path as Path
 from .param_functions import Query as Query
 from .param_functions import Security as Security
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
