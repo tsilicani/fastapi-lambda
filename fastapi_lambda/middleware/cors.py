@@ -2,7 +2,7 @@
 Lambda-native CORS middleware.
 
 Adapted from Starlette's CORS middleware for Lambda event handling.
-No ASGI - works directly with LambdaRequest/LambdaResponse.
+Original implementation: https://github.com/Kludex/starlette/blob/main/starlette/middleware/cors.py
 """
 
 from __future__ import annotations
@@ -10,8 +10,9 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
-from fastapi_lambda.request import LambdaRequest
-from fastapi_lambda.response import LambdaResponse, PlainTextResponse
+from fastapi_lambda.requests import LambdaRequest
+from fastapi_lambda.response import PlainTextResponse, Response
+from fastapi_lambda.types import RequestHandler
 
 ALL_METHODS = ("DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT")
 SAFELISTED_HEADERS = {"Accept", "Accept-Language", "Content-Language", "Content-Type"}
@@ -35,6 +36,7 @@ class CORSMiddleware:
 
     def __init__(
         self,
+        app: RequestHandler,
         allow_origins: Sequence[str] = (),
         allow_methods: Sequence[str] = ("GET",),
         allow_headers: Sequence[str] = (),
@@ -43,6 +45,7 @@ class CORSMiddleware:
         expose_headers: Sequence[str] = (),
         max_age: int = 600,
     ) -> None:
+        self.app = app
         if "*" in allow_methods:
             allow_methods = ALL_METHODS
 
@@ -103,27 +106,36 @@ class CORSMiddleware:
 
         return origin in self.allow_origins
 
-    def process_request(self, request: LambdaRequest, response: LambdaResponse) -> LambdaResponse:
+    async def __call__(self, request: LambdaRequest) -> Response:
         """
-        Add CORS headers to response based on request.
+        Process request through CORS middleware.
 
-        Called by the app after routing but before returning response.
+        PRE-PROCESSING:
+          - Check for origin header
+          - Handle preflight requests (short-circuit)
+
+        POST-PROCESSING:
+          - Add CORS headers to response
         """
         origin = request.headers.get("origin")
 
-        # No origin header - no CORS processing needed
+        # No origin header - no CORS processing, pass through
         if not origin:
-            return response
+            return await self.app(request)
 
-        # Handle preflight request
+        # PRE-PROCESSING: Handle preflight request (short-circuit)
         if request.method == "OPTIONS" and "access-control-request-method" in request.headers:
             return self._handle_preflight(request)
 
-        # Handle simple request - add CORS headers
+        # CALL NEXT: Execute handler
+        response = await self.app(request)
+
+        # POST-PROCESSING: Add CORS headers to response
         self._add_cors_headers(response, origin, request.headers.get("cookie") is not None)
+
         return response
 
-    def _handle_preflight(self, request: LambdaRequest) -> LambdaResponse:
+    def _handle_preflight(self, request: LambdaRequest) -> Response:
         """Handle CORS preflight OPTIONS request."""
         requested_origin = request.headers.get("origin", "")
         requested_method = request.headers.get("access-control-request-method", "")
@@ -159,7 +171,7 @@ class CORSMiddleware:
 
         return PlainTextResponse("OK", status_code=200, headers=headers)
 
-    def _add_cors_headers(self, response: LambdaResponse, origin: str, has_cookie: bool) -> None:
+    def _add_cors_headers(self, response: Response, origin: str, has_cookie: bool) -> None:
         """Add CORS headers to a simple (non-preflight) response."""
         # Add pre-computed simple headers
         response.headers.update(self.simple_headers)
@@ -175,7 +187,7 @@ class CORSMiddleware:
             self._add_vary_header(response, "Origin")
 
     @staticmethod
-    def _add_vary_header(response: LambdaResponse, value: str) -> None:
+    def _add_vary_header(response: Response, value: str) -> None:
         """Add or append to Vary header."""
         existing = response.headers.get("Vary", "")
         if existing:

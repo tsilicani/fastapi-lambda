@@ -7,10 +7,12 @@ Replaces ASGI (scope/receive/send) with direct Lambda event handling.
 import types
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
     Dict,
-    List,
+    Literal,
     Optional,
     Set,
     Type,
@@ -26,37 +28,46 @@ UnionType = getattr(types, "UnionType", Union)
 ModelNameMap = Dict[Union[Type[BaseModel], Type[Enum]], str]
 IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
 
+HttpMethod = Literal[
+    "GET",
+    "HEAD",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS",
+    "PATCH",
+]
+"""HTTP methods supported by API Gateway or Lambda Function URLs."""
+
+
+class HTTPContext(TypedDict, total=False):
+    """HTTP context for API Gateway v2.0 events."""
+
+    method: str
+    sourceIp: str
+
 
 class APIGatewayRequestContext(TypedDict, total=False):
-    """API Gateway request context."""
+    """API Gateway request context (minimal, only used fields)."""
 
-    requestId: str
-    accountId: str
-    stage: str
-    requestTime: str
-    requestTimeEpoch: int
-    identity: Dict[str, Any]
-    domainName: str
-    apiId: str
+    identity: Dict[str, Any]  # v1.0: contains sourceIp
+    http: HTTPContext  # v2.0: contains method and sourceIp
 
 
 class LambdaEvent(TypedDict, total=False):
     """
-    API Gateway HTTP API (v2.0) or REST API (v1.0) event.
+    API Gateway HTTP API (v2.0) or REST API (v1.0) event (minimal, only used fields).
 
-    Simplified to support both formats.
+    Supports both v1.0 and v2.0 formats with only fields actually used by the framework.
     """
 
     # HTTP method and path
-    httpMethod: str  # v1.0: "GET", v2.0: uses requestContext.http.method
-    path: str
-    resource: str  # v1.0 resource path template
+    httpMethod: HttpMethod  # v1.0 only
+    path: str  # v1.0: path
 
     # Request data
     headers: Dict[str, str]
-    multiValueHeaders: Dict[str, List[str]]  # v1.0 only
     queryStringParameters: Optional[Dict[str, str]]
-    multiValueQueryStringParameters: Optional[Dict[str, List[str]]]  # v1.0 only
     pathParameters: Optional[Dict[str, str]]
     body: Optional[str]
     isBase64Encoded: bool
@@ -65,16 +76,22 @@ class LambdaEvent(TypedDict, total=False):
     requestContext: APIGatewayRequestContext
 
     # v2.0 fields
-    version: str  # "2.0" for HTTP API
     rawPath: str  # v2.0: raw path
     rawQueryString: str  # v2.0: raw query string
 
 
-class LambdaResponse(TypedDict, total=False):
-    "API Gateway response format (compatible with v1.0 and v2.0)."
+class LambdaResponse(TypedDict):
+    """API Gateway response format (compatible with v1.0 and v2.0)."""
 
     statusCode: int
     headers: Dict[str, str]
-    multiValueHeaders: Dict[str, List[str]]  # v1.0 only
     body: str
     isBase64Encoded: bool
+
+
+if TYPE_CHECKING:
+    from fastapi_lambda.requests import LambdaRequest
+    from fastapi_lambda.response import Response
+
+RequestHandler = Callable[["LambdaRequest"], Awaitable["Response"]]
+"""Async handler that processes a Lambda request and returns a response."""

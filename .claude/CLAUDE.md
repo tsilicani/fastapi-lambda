@@ -57,9 +57,9 @@ FastAPI-Lambda is a lightweight, Lambda-optimized framework that maintains FastA
 ✅ **Security (Simplified)**
 - HTTP Bearer (JWT tokens)
 
-✅ **Middleware**
+✅ **Middleware** 🚧 (Refactoring in progress - see Active Development section)
 - AsyncExitStack for DI cleanup
-- Custom middleware support
+- Custom middleware support (currently post-processing only, being refactored to full pre/post pattern)
 
 ## Architecture
 
@@ -144,6 +144,11 @@ def send_email(background_tasks: BackgroundTasks):
 - Prefer flat over nested code
 - Explicit over implicit
 
+**File Structure:**
+- **Follow FastAPI/Starlette naming conventions**
+  - Match original source structure for familiarity and compatibility
+  - Reference: [Starlette structure](https://github.com/encode/starlette)
+
 **Speed:**
 - Direct Lambda event handling (no ASGI overhead)
 - Pre-compiled route patterns
@@ -154,38 +159,35 @@ def send_email(background_tasks: BackgroundTasks):
 - **Mandatory test coverage** for all new code
 - Target: >80% coverage (currently 83%)
 - Test edge cases and error paths
-- Use pytest with coverage reporting
+- E2E tests require AWS deployment: use `npm run test:e2e` when needed
 
-### Code Quality Tools
+### Development Workflow
 
-**Static Analysis:**
-- **vulture** - Dead code detection
-- **mypy** - Type checking
-- **Pylance** - VS Code type analysis
+**Single Check Command:**
+Use the unified `check` pipeline for all local development iterations:
 
-**Testing:**
-- **pytest** - Test framework
-- **pytest-cov** - Coverage reporting
-- **pytest-asyncio** - Async test support
+```bash
+source config.sh && check
+```
+
+This runs in sequence:
+1. **Type checking** (pyright)
+2. **Linting** (flake8)
+3. **Tests with coverage** (pytest, excludes e2e)
+
+Stops on first failure. Only use this command - do not run individual checks separately.
+
+**Code Quality Tools:**
+- **pyright** - Type checking (strict mode)
+- **flake8** - Linting
+- **pytest** - Test framework with coverage
+- **vulture** - Dead code detection (manual use only)
 
 **Coverage Importance:**
 - Coverage is a **critical metric** for code health
 - Minimum 80% coverage required for production
 - 100% coverage for critical paths (DI, validation, OpenAPI)
 - Use coverage to identify dead code and untested edge cases
-
-**Example workflow:**
-
-```bash
-# Run tests with coverage
-poetry run pytest --cov=fastapi_lambda --cov-report=term-missing
-
-# Find dead code
-poetry run vulture fastapi_lambda/
-
-# Type checking
-mypy fastapi_lambda/
-```
 
 ## Removed Features (Lambda Incompatible)
 
@@ -211,6 +213,132 @@ mypy fastapi_lambda/
 - **Pydantic:** https://github.com/pydantic/pydantic
 - **AWS Lambda:** https://aws.amazon.com/lambda/
 - **API Gateway:** https://aws.amazon.com/api-gateway/
+
+---
+
+## 🚧 Active Development: Middleware Stack Refactor
+
+### Goal
+Replicate FastAPI/Starlette middleware behavior faithfully while maintaining Lambda-native architecture (no ASGI).
+
+### Current Status: **IN PROGRESS**
+
+**Problem identified:**
+Current implementation applies middleware ONLY after routing (post-processing only). This prevents:
+- ❌ Pre-request processing (auth checks, logging, request modification)
+- ❌ Short-circuit behavior (early returns without calling handler)
+- ❌ CORS preflight handling before routing
+- ❌ Proper middleware stack execution order
+
+**Target behavior (FastAPI/Starlette pattern):**
+```
+Request → Middleware A (PRE) → Middleware B (PRE) → Handler → Middleware B (POST) → Middleware A (POST) → Response
+```
+
+### Implementation Plan
+
+#### Phase 1: Test Suite (TDD Approach) ✅ PRIORITY
+**File:** `tests/test_middleware.py`
+
+Test categories:
+- **Stack execution order** - Verify LIFO execution (last added = outermost)
+- **Pre-processing** - Middleware modifies request before routing
+- **Post-processing** - Middleware modifies response after handler
+- **Short-circuit** - Middleware returns early without calling handler (auth, rate limit, CORS preflight)
+- **Lazy stack building** - Stack built on first request, invalidated when middleware added
+- **Multiple middleware integration** - Realistic stack with 3+ layers
+- **Mock/stub helpers** - `CallRecorderMiddleware`, `ShortCircuitMiddleware` for testing
+
+**Coverage target:** 100% for middleware stack logic
+
+#### Phase 2: Core Infrastructure (`app.py`)
+- Add `_middleware_stack: Optional[Callable]` for lazy-built stack
+- Implement `build_middleware_stack()` - reverse-order wrapping (chain of responsibility pattern)
+- Refactor `__call__()` to use middleware stack
+- Remove old post-routing middleware loop
+
+#### Phase 3: CORS Rewrite (`cors.py`)
+
+#### Phase 4: Verify Compatibility
+- All 19 existing CORS tests must pass unchanged
+- No breaking changes to public API
+
+#### Phase 5: APIRouter Implementation
+**New file:** `fastapi_lambda/api_router.py`
+
+Features:
+- Route grouping with shared prefix/tags/dependencies
+- Router-level middleware (applied only to router routes)
+- `app.include_router(router)` support
+- FastAPI-compatible API
+
+#### Phase 6: APIRouter Tests
+**File:** `tests/test_api_router.py`
+- Router with prefix/tags
+- Router-level middleware
+- Nested routers
+
+#### Phase 7: Documentation
+- Update README with middleware examples
+- Update ARCHITECTURE.md with stack diagram
+- Migration notes (if any breaking changes)
+
+### Key Technical Decisions
+
+**Pattern:** Class-based middleware with `__call__` method (Starlette-compatible)
+```python
+app.add_middleware(CORSMiddleware, allow_origins=["*"])
+```
+
+**Stack building:** Lazy initialization on first request, invalidated when middleware added
+
+**Execution order:** Reverse order (LIFO) - last added middleware is outermost
+```python
+app.add_middleware(A)  # Innermost
+app.add_middleware(B)
+app.add_middleware(C)  # Outermost
+# Execution: C-PRE → B-PRE → A-PRE → Handler → A-POST → B-POST → C-POST
+```
+
+**Lambda-native:** Replace ASGI `(scope, receive, send)` with `LambdaRequest → LambdaResponse`
+
+### TODO Checklist
+
+- [ ] **Phase 1:** Create `tests/test_middleware.py` with comprehensive test suite
+  - [ ] Stack execution order tests (LIFO verification)
+  - [ ] Pre-processing tests (request modification)
+  - [ ] Post-processing tests (response modification)
+  - [ ] Short-circuit tests (auth, rate limit, CORS preflight)
+  - [ ] Lazy stack building tests
+  - [ ] Mock/stub helper middleware classes
+- [ ] **Phase 2:** Implement `build_middleware_stack()` in `app.py`
+  - [ ] Add `_middleware_stack` attribute
+  - [ ] Implement lazy stack building
+  - [ ] Refactor `__call__()` to use stack
+  - [ ] Remove old middleware loop
+- [ ] **Phase 3:** Rewrite `CORSMiddleware` with `__call__` pattern
+  - [ ] Convert to callable class with `app` parameter
+  - [ ] Implement pre-processing (preflight short-circuit)
+  - [ ] Implement post-processing (add CORS headers)
+  - [ ] Keep all existing helper methods
+- [ ] **Phase 4:** Verify all 19 CORS tests pass
+  - [ ] Run `pytest tests/test_cors.py -v`
+  - [ ] Fix any compatibility issues
+- [ ] **Phase 5:** Implement `APIRouter` class
+  - [ ] Create `fastapi_lambda/api_router.py`
+  - [ ] Implement route decorators (get/post/put/delete/patch)
+  - [ ] Add router-level middleware support
+  - [ ] Implement `include_router()` in FastAPI class
+- [ ] **Phase 6:** Create APIRouter tests
+  - [ ] Prefix/tags tests
+  - [ ] Router middleware tests
+  - [ ] Nested router tests
+- [ ] **Phase 7:** Update documentation
+  - [ ] README.md - middleware examples
+  - [ ] ARCHITECTURE.md - stack diagram
+  - [ ] This file - mark as complete
+
+---
 
 ## Future implementations
 
@@ -241,6 +369,36 @@ mypy fastapi_lambda/
   - FastAPI behavior: auto-runs sync deps in threadpool via Starlette
   - Trade-off: adds complexity and minimal overhead vs explicit async/sync separation
   - Consider: optional flag `auto_threadpool=True` for FastAPI compatibility
+- [ ] **Make all middleware assignment FastAPI compatible**
+  - Currently: Only `app.add_middleware()` is implemented
+  - Missing patterns:
+    - [ ] Constructor `middleware` parameter (Starlette-style)
+      - Accept `Optional[Sequence[Middleware]]` in `__init__`
+      - Example: `app = FastAPI(middleware=[Middleware(CORS, ...)])`
+    - [ ] `@app.middleware("http")` decorator
+      - Implement `FastAPI.middleware(middleware_type: str)` method
+      - Create `BaseHTTPMiddleware` helper class
+      - Wraps function with `(request, call_next)` signature
+      - Example:
+        ```python
+        @app.middleware("http")
+        async def add_header(request: Request, call_next):
+            response = await call_next(request)
+            response.headers["X-Custom"] = "value"
+            return response
+        ```
+  - Implementation steps:
+    - [ ] Add `middleware` param to `FastAPI.__init__` with `Sequence` type
+    - [ ] Create `BaseHTTPMiddleware` class in `middleware/base.py`
+    - [ ] Implement `FastAPI.middleware()` decorator method
+    - [ ] Add comprehensive tests for all 3 patterns
+    - [ ] Update docs with examples of all middleware assignment methods
+  - Estimated effort: ~1.5 hours
+  - Benefits: Full FastAPI API compatibility, more flexible middleware setup
+- [🚧] `APIRouter` support - **IN PROGRESS** (see Active Development section)
+  - Part of middleware stack refactor
+  - Includes route grouping with shared prefix/tags/dependencies
+  - Router-level middleware support
 
 ### CI/CD & Release
 - [x] Set up GitHub Actions CI (tests, coverage, linting, type-check)
@@ -251,25 +409,3 @@ mypy fastapi_lambda/
   - ✅ Published: https://pypi.org/project/fastapi-lambda/
   - ✅ MIT License with proper FastAPI attribution
   - ✅ Complete package metadata
-
-### Community & Outreach
-- [ ] Share on Twitter/X with FastAPI community tag
-- [ ] Post on Reddit
-  - [ ] r/Python - Share as "Show & Tell"
-  - [ ] r/aws - AWS Lambda optimization angle
-  - [ ] r/FastAPI (if exists) or FastAPI Discord
-- [ ] Write blog post on Dev.to or Hashnode
-  - Topic: "FastAPI for Lambda: <500ms Cold Starts"
-  - Include performance benchmarks vs standard FastAPI
-- [ ] Create example projects showcasing different use cases
-- [ ] Contribute to awesome-fastapi list (if accepted)
-
-### Documentation & Examples
-- [ ] Add an `examples/` folder with minimal sample projects
-  - [ ] Basic CRUD API
-  - [ ] JWT authentication example
-  - [ ] Multi-function Lambda deployment
-- [ ] Write a concise doc detailing unsupported FastAPI features and rationale (e.g., WebSockets, forms, background tasks)
-- [x] Add PyPI and CI badges to `README.md`
-- [ ] Add coverage badge when Codecov is set up
-- [ ] Add an architecture diagram in this document (`CLAUDE.md`) showing class/function interactions

@@ -1,0 +1,156 @@
+"""Test response classes in Lambda context."""
+
+import pytest
+
+from fastapi_lambda import FastAPI, JSONResponse
+from fastapi_lambda.response import HTMLResponse, PlainTextResponse, RedirectResponse, Response
+from tests.utils import make_event
+
+
+@pytest.mark.asyncio
+async def test_json_response_unicode():
+    """Test JSONResponse preserves Unicode."""
+    app = FastAPI()
+
+    @app.get("/unicode")
+    async def get_unicode():
+        return JSONResponse({"msg": "Hello 世界 🚀"})
+
+    event = make_event(method="GET", path="/unicode")
+    response = await app(event)
+
+    assert "世界" in response["body"]
+    assert "🚀" in response["body"]
+
+
+@pytest.mark.asyncio
+async def test_html_response():
+    """Test HTMLResponse with FastAPI."""
+    app = FastAPI()
+
+    @app.get("/page")
+    async def get_page():
+        return HTMLResponse("<html><body>Test</body></html>")
+
+    event = make_event(method="GET", path="/page")
+    response = await app(event)
+
+    assert response["statusCode"] == 200
+    assert response["headers"]["Content-Type"] == "text/html"
+    assert response["body"] == "<html><body>Test</body></html>"
+
+
+@pytest.mark.asyncio
+async def test_plain_text_response():
+    """Test PlainTextResponse with FastAPI."""
+    app = FastAPI()
+
+    @app.get("/text")
+    async def get_text():
+        return PlainTextResponse("Plain text data")
+
+    event = make_event(method="GET", path="/text")
+    response = await app(event)
+
+    assert response["statusCode"] == 200
+    assert response["headers"]["Content-Type"] == "text/plain"
+    assert response["body"] == "Plain text data"
+
+
+@pytest.mark.asyncio
+async def test_redirect_response():
+    """Test RedirectResponse with FastAPI."""
+    app = FastAPI()
+
+    @app.get("/old")
+    async def old_endpoint():
+        return RedirectResponse("/new", status_code=301)
+
+    event = make_event(method="GET", path="/old")
+    response = await app(event)
+
+    assert response["statusCode"] == 301
+    assert response["headers"]["Location"] == "/new"
+    assert response["body"] == ""
+
+
+@pytest.mark.asyncio
+async def test_redirect_with_custom_headers():
+    """Test RedirectResponse with additional headers."""
+    app = FastAPI()
+
+    @app.get("/redirect")
+    async def redirect():
+        return RedirectResponse("/target", headers={"X-Custom": "value"})
+
+    event = make_event(method="GET", path="/redirect")
+    response = await app(event)
+
+    assert response["statusCode"] == 307
+    assert response["headers"]["Location"] == "/target"
+    assert response["headers"]["X-Custom"] == "value"
+
+
+@pytest.mark.asyncio
+async def test_lambda_response_none_content():
+    """Test Response with None content."""
+
+    app = FastAPI()
+
+    @app.get("/empty")
+    async def empty():
+        return Response(None, status_code=204)
+
+    event = make_event(method="GET", path="/empty")
+    response = await app(event)
+
+    assert response["statusCode"] == 204
+    assert response["body"] == ""
+
+
+@pytest.mark.asyncio
+async def test_lambda_response_bytes_content():
+    """Test Response with bytes content."""
+
+    app = FastAPI()
+
+    @app.get("/bytes")
+    async def get_bytes():
+        return Response(b"Binary data")
+
+    event = make_event(method="GET", path="/bytes")
+    response = await app(event)
+
+    assert response["body"] == "Binary data"
+
+
+@pytest.mark.asyncio
+async def test_lambda_response_int_content():
+    """Test Response with int content."""
+
+    app = FastAPI()
+
+    @app.get("/number")
+    async def get_number():
+        return Response(12345)
+
+    event = make_event(method="GET", path="/number")
+    response = await app(event)
+
+    assert response["body"] == "12345"
+
+
+@pytest.mark.asyncio
+async def test_response_media_type_sets_content_type():
+    """Test media_type parameter sets Content-Type header."""
+
+    app = FastAPI()
+
+    @app.get("/xml")
+    async def get_xml():
+        return Response("<xml/>", media_type="application/xml")
+
+    event = make_event(method="GET", path="/xml")
+    response = await app(event)
+
+    assert response["headers"]["Content-Type"] == "application/xml"

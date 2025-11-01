@@ -5,7 +5,9 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel
 
-from fastapi_lambda.app import FastAPI
+from fastapi_lambda import Body, Query
+from fastapi_lambda.applications import FastAPI
+from tests.utils import make_event
 
 
 class Item(BaseModel):
@@ -14,7 +16,7 @@ class Item(BaseModel):
 
 
 @pytest.mark.asyncio
-async def test_openapi_endpoint(make_event, lambda_context):
+async def test_openapi_endpoint():
     """Test /openapi.json endpoint exists."""
     app = FastAPI(title="Test API", version="1.0.0")
 
@@ -22,8 +24,8 @@ async def test_openapi_endpoint(make_event, lambda_context):
     async def root():
         return {"ok": True}
 
-    event = make_event("GET", "/openapi.json")
-    response = await app(event, lambda_context)
+    event = make_event(method="GET", path="/openapi.json")
+    response = await app(event)
 
     assert response["statusCode"] == 200
     assert "application/json" in response["headers"]["Content-Type"]
@@ -107,6 +109,47 @@ def test_openapi_response_model():
     assert "application/json" in response_200["content"]
 
 
+def test_openapi_model_description_truncation():
+    """Test model description truncation with \\f character.
+
+    The \\f (form feed) character allows keeping detailed docs in code
+    while showing only concise descriptions in OpenAPI schema.
+    """
+    app = FastAPI()
+
+    class DetailedModel(BaseModel):
+        """Short description for API docs.
+        \f
+        This detailed explanation is only for code documentation tools
+        like Sphinx or IDEs, and won't appear in OpenAPI schema.
+        """
+
+        value: str
+
+    @app.get("/detailed", response_model=DetailedModel)
+    async def get_detailed():
+        return {"value": "test"}
+
+    schema = app.openapi()
+
+    # Check that model definition exists in components
+    assert "components" in schema
+    assert "schemas" in schema["components"]
+    assert "DetailedModel" in schema["components"]["schemas"]
+
+    # Verify description is truncated at \f character
+    model_schema = schema["components"]["schemas"]["DetailedModel"]
+    assert "description" in model_schema
+    description = model_schema["description"]
+
+    # Should contain the short description
+    assert "Short description for API docs" in description
+
+    # Should NOT contain the detailed part after \f
+    assert "Sphinx" not in description
+    assert "IDEs" not in description
+
+
 def test_openapi_validation_error_response():
     """Test 422 validation error response in schema."""
     app = FastAPI()
@@ -178,8 +221,6 @@ def test_openapi_examples_with_complex_types():
     from enum import Enum
     from uuid import UUID
 
-    from fastapi_lambda import Body, Query
-
     class Status(Enum):
         ACTIVE = "active"
 
@@ -224,8 +265,6 @@ def test_openapi_examples_all_types():
     from decimal import Decimal
     from enum import Enum
     from pathlib import Path
-
-    from fastapi_lambda import Body
 
     class Priority(Enum):
         HIGH = "high"
@@ -274,8 +313,6 @@ def test_openapi_examples_edge_cases():
     """Test _jsonable_encoder edge cases for 100% coverage."""
     from datetime import time
     from uuid import UUID
-
-    from fastapi_lambda import Body
 
     class TestProduct(BaseModel):
         id: UUID

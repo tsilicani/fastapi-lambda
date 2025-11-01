@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 from fastapi_lambda.types import LambdaResponse as LambdaResponseDict
 
 
-class LambdaResponse:
+class Response:
     """
     Response object that converts to API Gateway Lambda response format.
 
@@ -54,7 +54,7 @@ class LambdaResponse:
         }
 
 
-class JSONResponse(LambdaResponse):
+class JSONResponse(Response):
     """JSON response."""
 
     def __init__(
@@ -75,7 +75,7 @@ class JSONResponse(LambdaResponse):
         return json.dumps(content, ensure_ascii=False, indent=None, separators=(",", ":"))
 
 
-class HTMLResponse(LambdaResponse):
+class HTMLResponse(Response):
     """HTML response."""
 
     def __init__(
@@ -92,7 +92,7 @@ class HTMLResponse(LambdaResponse):
         )
 
 
-class PlainTextResponse(LambdaResponse):
+class PlainTextResponse(Response):
     """Plain text response."""
 
     def __init__(
@@ -109,7 +109,7 @@ class PlainTextResponse(LambdaResponse):
         )
 
 
-class RedirectResponse(LambdaResponse):
+class RedirectResponse(Response):
     """Redirect response."""
 
     def __init__(

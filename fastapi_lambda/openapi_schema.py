@@ -9,22 +9,15 @@ import datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path, PurePath
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 from uuid import UUID
 
 from pydantic import BaseModel
+from pydantic._internal._utils import lenient_issubclass
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from typing_extensions import Literal
 
-from fastapi_lambda._compat import (
-    GenerateJsonSchema,
-    JsonSchemaValue,
-    ModelField,
-    Undefined,
-    get_compat_model_name_map,
-    get_definitions,
-    get_schema_from_model_field,
-    lenient_issubclass,
-)
+from fastapi_lambda._compat import ModelField, Undefined
 from fastapi_lambda.dependencies import Dependant
 from fastapi_lambda.params import Body, ParamTypes
 
@@ -68,6 +61,42 @@ status_code_ranges: Dict[str, str] = {
     "5XX": "Server Error",
     "DEFAULT": "Default Response",
 }
+
+# Functions from _compat folder
+
+
+def get_definitions(
+    *,
+    fields: List[ModelField],
+    schema_generator: GenerateJsonSchema,
+    separate_input_output_schemas: bool = True,
+) -> Tuple[
+    Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
+    Dict[str, Dict[str, Any]],
+]:
+    override_mode: Union[Literal["validation"], None] = None if separate_input_output_schemas else "validation"
+    inputs = [(field, override_mode or field.mode, field._type_adapter.core_schema) for field in fields]
+    field_mapping, definitions = schema_generator.generate_definitions(inputs=inputs)  # type: ignore[assignment]
+    for item_def in cast(Dict[str, Dict[str, Any]], definitions).values():
+        if "description" in item_def:
+            item_description = cast(str, item_def["description"]).split("\f")[0]
+            item_def["description"] = item_description
+    return field_mapping, definitions  # type: ignore[return-value]
+
+
+def get_schema_from_model_field(
+    *,
+    field: ModelField,
+    schema_generator: GenerateJsonSchema,
+    field_mapping: Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
+    separate_input_output_schemas: bool = True,
+) -> Dict[str, Any]:
+    override_mode: Union[Literal["validation"], None] = None if separate_input_output_schemas else "validation"
+    # This expects that GenerateJsonSchema was already used to generate the definitions
+    json_schema = field_mapping[(field, override_mode or field.mode)]
+    if "$ref" not in json_schema:
+        json_schema["title"] = field.field_info.title or field.alias.title().replace("_", " ")
+    return json_schema
 
 
 # Helper functions
@@ -200,9 +229,9 @@ def _get_flat_fields_from_params(params: List[ModelField]) -> List[ModelField]:
     for param in params:
         if lenient_issubclass(param.type_, BaseModel):
             # Pydantic model as parameter - extract fields
-            from fastapi_lambda._compat import get_cached_model_fields
-
-            model_fields = get_cached_model_fields(param.type_)
+            model_fields = [
+                ModelField(field_info=field_info, name=name) for name, field_info in param.type_.model_fields.items()
+            ]
             flat_fields.extend(model_fields)
         else:
             flat_fields.append(param)
@@ -232,7 +261,6 @@ def _get_openapi_operation_parameters(
     *,
     dependant: Dependant,
     schema_generator: GenerateJsonSchema,
-    model_name_map: Dict[Any, str],
     field_mapping: Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
     separate_input_output_schemas: bool = True,
 ) -> List[Dict[str, Any]]:
@@ -269,7 +297,6 @@ def _get_openapi_operation_parameters(
             param_schema = get_schema_from_model_field(
                 field=param,
                 schema_generator=schema_generator,
-                model_name_map=model_name_map,
                 field_mapping=field_mapping,
                 separate_input_output_schemas=separate_input_output_schemas,
             )
@@ -317,7 +344,6 @@ def get_openapi_operation_request_body(
     *,
     body_field: Optional[ModelField],
     schema_generator: GenerateJsonSchema,
-    model_name_map: Dict[Any, str],
     field_mapping: Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
     separate_input_output_schemas: bool = True,
 ) -> Optional[Dict[str, Any]]:
@@ -331,7 +357,6 @@ def get_openapi_operation_request_body(
     body_schema = get_schema_from_model_field(
         field=body_field,
         schema_generator=schema_generator,
-        model_name_map=model_name_map,
         field_mapping=field_mapping,
         separate_input_output_schemas=separate_input_output_schemas,
     )
@@ -401,7 +426,6 @@ def get_openapi_path(
     responses: Optional[Dict[int, Dict[str, Any]]] = None,
     deprecated: Optional[bool] = None,
     schema_generator: GenerateJsonSchema,
-    model_name_map: Dict[Any, str],
     field_mapping: Dict[Tuple[ModelField, Literal["validation", "serialization"]], JsonSchemaValue],
     separate_input_output_schemas: bool = True,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -426,7 +450,6 @@ def get_openapi_path(
     parameters = _get_openapi_operation_parameters(
         dependant=dependant,
         schema_generator=schema_generator,
-        model_name_map=model_name_map,
         field_mapping=field_mapping,
         separate_input_output_schemas=separate_input_output_schemas,
     )
@@ -441,7 +464,6 @@ def get_openapi_path(
         request_body = get_openapi_operation_request_body(
             body_field=body_field,
             schema_generator=schema_generator,
-            model_name_map=model_name_map,
             field_mapping=field_mapping,
             separate_input_output_schemas=separate_input_output_schemas,
         )
@@ -456,7 +478,6 @@ def get_openapi_path(
         response_schema = get_schema_from_model_field(
             field=response_field,
             schema_generator=schema_generator,
-            model_name_map=model_name_map,
             field_mapping=field_mapping,
             separate_input_output_schemas=separate_input_output_schemas,
         )
@@ -522,12 +543,10 @@ def get_openapi_schema(
     all_fields = get_fields_from_routes(routes)
 
     # Generate schema definitions for all fields at once
-    model_name_map = get_compat_model_name_map(all_fields)
     schema_generator = GenerateJsonSchema(ref_template=REF_TEMPLATE)
     field_mapping, all_definitions = get_definitions(
         fields=all_fields,
         schema_generator=schema_generator,
-        model_name_map=model_name_map,
         separate_input_output_schemas=separate_input_output_schemas,
     )
 
@@ -559,7 +578,6 @@ def get_openapi_schema(
                 responses=getattr(route, "responses", None),
                 deprecated=getattr(route, "deprecated", None),
                 schema_generator=schema_generator,
-                model_name_map=model_name_map,
                 field_mapping=field_mapping,
                 separate_input_output_schemas=separate_input_output_schemas,
             )
