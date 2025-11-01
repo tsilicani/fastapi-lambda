@@ -5,7 +5,7 @@ Verifies FastAPI/Starlette-compatible middleware with pre/post processing and sh
 """
 
 import time
-from typing import Awaitable, Callable, List
+from typing import List
 
 import pytest
 
@@ -13,6 +13,7 @@ from fastapi_lambda import FastAPI, status
 from fastapi_lambda.middleware.base import BaseHTTPMiddleware
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import JSONResponse, Response
+from fastapi_lambda.types import RequestHandler
 from tests.utils import make_event
 
 
@@ -37,7 +38,7 @@ class AuthMiddleware:
     def __init__(
         self,
         # TODO check if original fastapi call app fn or other signature https://github.com/fastapi/fastapi/discussions/7691#discussioncomment-5143286
-        app: Callable[[LambdaRequest], Awaitable[Response]],
+        app: RequestHandler,
         logs: List[str],
     ):
         self.app = app
@@ -74,7 +75,7 @@ async def test_middleware_happy_path():
     @app.middleware("http")
     async def add_process_time_header(
         request: LambdaRequest,
-        call_next: Callable[[LambdaRequest], Awaitable[Response]],
+        call_next: RequestHandler,
     ) -> Response:
         logs.append("Starting process time measurement...")
         start_time = time.time()

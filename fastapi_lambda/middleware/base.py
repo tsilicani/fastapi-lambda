@@ -8,6 +8,7 @@ from typing import Any, Awaitable, Callable, Iterator, Optional, Type
 
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import Response
+from fastapi_lambda.types import RequestHandler
 
 
 class BaseHTTPMiddleware:
@@ -15,7 +16,7 @@ class BaseHTTPMiddleware:
 
     def __init__(
         self,
-        app: Callable[[LambdaRequest], Awaitable[Response]],
+        app: RequestHandler,
         dispatch: Optional[Callable[[LambdaRequest, Callable], Awaitable[Response]]] = None,
     ):
         self.app = app
@@ -30,7 +31,7 @@ class BaseHTTPMiddleware:
         return await self.dispatch_func(request, call_next)
 
     async def dispatch(
-        self, request: LambdaRequest, call_next: Callable[[LambdaRequest], Awaitable[Response]]
+        self, request: LambdaRequest, call_next: RequestHandler
     ) -> Response:
         raise NotImplementedError()  # pragma: no cover
 

@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
-from typing import Awaitable, Callable
 
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import PlainTextResponse, Response
+from fastapi_lambda.types import RequestHandler
 
 ALL_METHODS = ("DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT")
 SAFELISTED_HEADERS = {"Accept", "Accept-Language", "Content-Language", "Content-Type"}
@@ -36,7 +36,7 @@ class CORSMiddleware:
 
     def __init__(
         self,
-        app: Callable[[LambdaRequest], Awaitable[Response]],
+        app: RequestHandler,
         allow_origins: Sequence[str] = (),
         allow_methods: Sequence[str] = ("GET",),
         allow_headers: Sequence[str] = (),

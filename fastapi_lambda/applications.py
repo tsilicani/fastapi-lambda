@@ -8,7 +8,6 @@ Original FastAPI implementation: https://github.com/fastapi/fastapi/blob/master/
 
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Dict,
     List,
@@ -25,7 +24,7 @@ from fastapi_lambda.openapi_schema import get_openapi_schema
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import Response
 from fastapi_lambda.router import LambdaRouter
-from fastapi_lambda.types import DecoratedCallable, LambdaEvent
+from fastapi_lambda.types import DecoratedCallable, LambdaEvent, RequestHandler
 from fastapi_lambda.types import LambdaResponse as LambdaResponseDict
 
 
@@ -67,7 +66,7 @@ class FastAPI:
 
         # Middleware stack (lazy-built on first request)
         self.user_middleware: List[Middleware] = [] if middleware is None else list(middleware)
-        self._middleware_stack: Optional[Callable[[LambdaRequest], Awaitable[Response]]] = None
+        self._middleware_stack: Optional[RequestHandler] = None
 
         # Register OpenAPI endpoint if enabled
         if self.openapi_url:
@@ -91,7 +90,7 @@ class FastAPI:
 
         return decorator
 
-    def build_middleware_stack(self) -> Callable[[LambdaRequest], Awaitable[Response]]:
+    def build_middleware_stack(self) -> RequestHandler:
         """
         Build middleware stack matching FastAPI/Starlette pattern.
 
@@ -129,7 +128,7 @@ class FastAPI:
         async def router_handler(request: LambdaRequest) -> Response:
             return await self.router.route(request)
 
-        app: Callable[[LambdaRequest], Awaitable[Response]] = router_handler
+        app: RequestHandler = router_handler
 
         # Wrap with middleware stack (reverse order - LIFO)
         # FastAPI pattern: for cls, args, kwargs in reversed(middleware)

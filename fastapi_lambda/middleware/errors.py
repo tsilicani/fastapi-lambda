@@ -10,6 +10,7 @@ from typing import Awaitable, Callable, Optional
 
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import JSONResponse, Response
+from fastapi_lambda.types import RequestHandler
 
 
 class ServerErrorMiddleware:
@@ -29,7 +30,7 @@ class ServerErrorMiddleware:
 
     def __init__(
         self,
-        app: Callable[[LambdaRequest], Awaitable[Response]],
+        app: RequestHandler,
         handler: Optional[Callable[[LambdaRequest, Exception], Awaitable[Response]]] = None,
         debug: bool = False,
     ):

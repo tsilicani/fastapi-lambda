@@ -7,7 +7,9 @@ Replaces ASGI (scope/receive/send) with direct Lambda event handling.
 import types
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
     Dict,
     Literal,
@@ -85,3 +87,11 @@ class LambdaResponse(TypedDict):
     headers: Dict[str, str]
     body: str
     isBase64Encoded: bool
+
+
+if TYPE_CHECKING:
+    from fastapi_lambda.requests import LambdaRequest
+    from fastapi_lambda.response import Response
+
+RequestHandler = Callable[["LambdaRequest"], Awaitable["Response"]]
+"""Async handler that processes a Lambda request and returns a response."""

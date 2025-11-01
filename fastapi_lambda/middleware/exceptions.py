@@ -5,11 +5,12 @@ Inspired by: starlette.middleware.exceptions.ExceptionMiddleware
 Adapted for: AWS Lambda (no ASGI)
 """
 
-from typing import Awaitable, Callable, Dict, Optional, Type
+from typing import Callable, Dict, Optional, Type
 
 from fastapi_lambda.exceptions import HTTPException, RequestValidationError
 from fastapi_lambda.requests import LambdaRequest
 from fastapi_lambda.response import JSONResponse, Response
+from fastapi_lambda.types import RequestHandler
 
 
 class ExceptionMiddleware:
@@ -29,7 +30,7 @@ class ExceptionMiddleware:
 
     def __init__(
         self,
-        app: Callable[[LambdaRequest], Awaitable[Response]],
+        app: RequestHandler,
         handlers: Optional[Dict[Type[Exception], Callable]] = None,
     ):
         """
